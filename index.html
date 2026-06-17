@@ -1,0 +1,2909 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vocal Willow — Independent training for blind athletes.</title>
+    <meta name="description" content="One sensor. Three sports. Vocal Willow gives blind cricket, paddleball, and pickleball players instant, audio-first feedback — without a coach in the loop." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom": "https://esm.sh/react-dom@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "gsap": "https://esm.sh/gsap@3.12.5",
+          "gsap/ScrollTrigger": "https://esm.sh/gsap@3.12.5/ScrollTrigger"
+        }
+      }
+    </script>
+
+    <style>
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+
+      :root {
+        /* Brand & neutrals — green palette */
+        --bg: #FAFAF7;                       /* page background */
+        --bg-2: #F1F0EC;                     /* hover fill */
+        --bg-3: #FFFFFF;                     /* alt surface */
+        --paper: #FFFFFF;                    /* cards */
+        --ink: #0E5C3E;                      /* headings / logo / brand text — deep green */
+        --ink-2: #1A1A1A;                    /* body text */
+        --ink-dim: #6B7280;                  /* secondary text */
+        --line: #E7E5E0;                     /* divider */
+        --line-soft: #F1F0EC;                /* strong divider lite */
+
+        --accent: #16A34A;                   /* emerald — buttons, links, active */
+        --accent-2: #15803D;                 /* hover / pressed */
+        --accent-soft: rgba(22, 163, 74, 0.08);
+        --amber: #F59E0B;                    /* accent + audio highlight (never text) */
+
+        /* Status colors */
+        --status-good: #16A34A;
+        --status-good-bg: #E7F3EC;
+        --status-good-label: #166534;
+        --status-miss: #E5484D;
+        --status-miss-bg: #FDE8E8;
+        --status-miss-label: #991B1B;
+
+        /* Dark showcase stage — green-tinted */
+        --stage-bg: #07140E;
+        --stage-bg-2: #0B2017;
+        --stage-ink: #FAFAF7;
+        --stage-dim: #6B7280;
+        --stage-line: rgba(250, 250, 247, 0.12);
+      }
+
+      html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink-2); }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-weight: 400;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        overflow-x: hidden;
+      }
+      ::selection { background: var(--accent); color: #FFFFFF; }
+
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0.06;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      .display {
+        font-family: 'Bebas Neue', 'Inter', sans-serif;
+        font-weight: 400;
+        letter-spacing: -0.005em;
+        line-height: 0.85;
+        text-transform: uppercase;
+      }
+      .serif-i {
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        text-transform: none;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: var(--accent-2);
+      }
+      .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+      .container {
+        width: 100%;
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 0 28px;
+      }
+      @media (min-width: 900px) { .container { padding: 0 64px; } }
+      a { color: inherit; }
+
+      /* ============ NAV ============ */
+      .nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 100;
+        padding: 18px 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: padding 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        border-bottom: 1px solid transparent;
+      }
+      .nav.scrolled {
+        background: rgba(250, 250, 247, 0.9);
+        backdrop-filter: blur(18px) saturate(1.2);
+        -webkit-backdrop-filter: blur(18px) saturate(1.2);
+        border-bottom-color: var(--line);
+        padding: 14px 28px;
+      }
+      @media (min-width: 900px) {
+        .nav { padding: 24px 64px; }
+        .nav.scrolled { padding: 16px 64px; }
+      }
+      .nav-brand {
+        display: flex; align-items: center; gap: 12px;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 24px;
+        letter-spacing: 0.08em;
+      }
+      .nav-mark {
+        width: 36px; height: 36px;
+        background: var(--accent);
+        color: var(--bg-3);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+      }
+      .nav-links {
+        display: none; gap: 28px;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--ink-dim);
+      }
+      @media (min-width: 1100px) { .nav-links { display: flex; } }
+      .nav-links a {
+        text-decoration: none;
+        transition: color 0.2s ease;
+        cursor: pointer;
+      }
+      .nav-links a:hover { color: var(--accent); }
+
+      .sport-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--ink);
+        padding: 4px;
+      }
+      .sport-pill button {
+        background: transparent;
+        border: none;
+        padding: 6px 12px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        cursor: pointer;
+        color: var(--ink);
+        transition: all 0.18s ease;
+        font-weight: 600;
+      }
+      .sport-pill button:hover { color: var(--accent); }
+      .sport-pill button.active { background: var(--ink); color: var(--bg-3); }
+
+      /* ============ HERO ============ */
+      .hero {
+        position: relative;
+        min-height: 100vh;
+        padding: 150px 0 80px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .hero-bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(to right, rgba(20, 20, 20, 0.035) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(20, 20, 20, 0.035) 1px, transparent 1px);
+        background-size: 80px 80px;
+        mask-image: radial-gradient(ellipse at 70% 30%, black 30%, transparent 75%);
+        -webkit-mask-image: radial-gradient(ellipse at 70% 30%, black 30%, transparent 75%);
+        pointer-events: none;
+      }
+      .hero-glow {
+        position: absolute;
+        top: 10%; right: -10%;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(22, 163, 74, 0.10), transparent 65%);
+        pointer-events: none;
+        filter: blur(40px);
+      }
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 11px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        font-weight: 600;
+        margin-bottom: 28px;
+        animation: fade-up 0.9s 0.1s both;
+        flex-wrap: wrap;
+      }
+      .hero-eyebrow::before {
+        content: '';
+        width: 36px; height: 1px;
+        background: var(--accent);
+      }
+      .hero-title {
+        font-size: clamp(72px, 17vw, 260px);
+        margin: 0;
+        animation: fade-up 1s 0.2s both;
+        color: var(--ink);
+      }
+      .hero-title .accent { color: var(--accent); }
+      .hero-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+        margin-top: 70px;
+        animation: fade-up 1s 0.5s both;
+      }
+      @media (min-width: 900px) {
+        .hero-row { grid-template-columns: 1.4fr 1fr; gap: 80px; align-items: end; }
+      }
+      .hero-pitch {
+        font-size: clamp(20px, 2.2vw, 28px);
+        line-height: 1.35;
+        max-width: 820px;
+      }
+      .hero-pitch em { color: var(--accent); font-style: normal; font-weight: 600; }
+      .hero-pitch strong { font-weight: 600; }
+      .hero-pitch .serif-i { color: var(--accent-2); }
+      .hero-stats { display: flex; flex-direction: column; gap: 14px; }
+      .hero-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .hero-stat-num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 40px;
+        line-height: 1;
+      }
+      .hero-stat-num .red { color: var(--accent); }
+      .hero-stat-label {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        max-width: 60%;
+        text-align: right;
+        font-weight: 500;
+      }
+      .hero-scroll {
+        position: absolute;
+        bottom: 24px;
+        left: 28px;
+        font-size: 10px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+      }
+      .hero-scroll-line {
+        width: 1px; height: 40px;
+        background: linear-gradient(to bottom, var(--accent), transparent);
+        animation: drop 1.8s infinite;
+      }
+      @keyframes drop {
+        0%, 100% { transform: scaleY(1); opacity: 1; }
+        50% { transform: scaleY(0.4) translateY(20px); opacity: 0.3; }
+      }
+      @media (min-width: 900px) { .hero-scroll { left: 64px; } }
+
+      /* ============ TICKER ============ */
+      .ticker {
+        background: var(--accent);
+        color: var(--bg-3);
+        padding: 18px 0;
+        overflow: hidden;
+        border-top: 1px solid var(--accent-2);
+        border-bottom: 1px solid var(--accent-2);
+      }
+      .ticker-track {
+        display: flex; gap: 60px;
+        white-space: nowrap;
+        animation: scroll 42s linear infinite;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 32px;
+        letter-spacing: 0.04em;
+        will-change: transform;
+      }
+      .ticker-track span { display: inline-flex; align-items: center; gap: 60px; }
+      .ticker-track .dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        background: var(--bg-3);
+        border-radius: 50%;
+        transform: translateY(-6px);
+      }
+      @keyframes scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+      }
+
+      /* ============ SECTIONS ============ */
+      section { position: relative; }
+      .section { padding: 140px 0; position: relative; }
+      @media (max-width: 700px) { .section { padding: 80px 0; } }
+      .section-label {
+        display: flex; align-items: center; gap: 16px;
+        font-size: 11px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 32px;
+      }
+      .section-label::before {
+        content: '';
+        width: 36px; height: 1px;
+        background: var(--accent);
+      }
+      .section-label .num {
+        color: var(--ink-dim);
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 0;
+        font-weight: 600;
+      }
+      .section-h {
+        font-size: clamp(44px, 8vw, 120px);
+        margin: 0 0 32px;
+        max-width: 1200px;
+      }
+      .section-h .accent { color: var(--accent); }
+      .section-h .serif-i {
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        text-transform: none;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: var(--accent-2);
+      }
+      .lead {
+        font-size: clamp(18px, 1.5vw, 22px);
+        line-height: 1.55;
+        max-width: 800px;
+        margin-bottom: 28px;
+      }
+      .lead-dim { color: var(--ink-dim); }
+
+      /* ============ MANIFESTO ============ */
+      .manifesto {
+        background: var(--bg-2);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 120px 0;
+      }
+      .manifesto-quote {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(40px, 6.5vw, 96px);
+        line-height: 1;
+        text-transform: uppercase;
+        max-width: 1300px;
+      }
+      .manifesto-quote .accent { color: var(--accent); }
+      .manifesto-attr {
+        margin-top: 36px;
+        font-size: 12px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        font-weight: 600;
+      }
+
+      /* ============ CINEMATIC SHOWCASE (Dark Stage) ============ */
+      .showcase {
+        position: relative;
+        min-height: 100vh;
+        background: var(--stage-bg);
+        color: var(--stage-ink);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: ns-resize;
+        border-top: 1px solid var(--ink);
+        border-bottom: 1px solid var(--ink);
+
+        background-image:
+          radial-gradient(ellipse 1100px 700px at 50% 45%, rgba(40, 28, 26, 0.85) 0%, transparent 60%),
+          radial-gradient(ellipse 500px 280px at 50% 55%, rgba(22, 163, 74, 0.18) 0%, transparent 70%),
+          radial-gradient(ellipse 800px 200px at 50% 0%, rgba(22, 163, 74, 0.08) 0%, transparent 70%),
+          linear-gradient(180deg, var(--stage-bg) 0%, var(--stage-bg-2) 50%, var(--stage-bg) 100%);
+      }
+      .showcase::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(to right, var(--stage-line) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--stage-line) 1px, transparent 1px);
+        background-size: 90px 90px;
+        mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .showcase::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        opacity: 0.06;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+      }
+      .showcase-topo {
+        position: absolute;
+        inset: 0;
+        opacity: 0.18;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .showcase-topo svg { width: 100%; height: 100%; }
+
+      .showcase-webgl {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.85;
+        mix-blend-mode: screen;
+        mask-image: radial-gradient(ellipse at 50% 50%, black 45%, transparent 90%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 45%, transparent 90%);
+      }
+      .showcase-webgl canvas { width: 100%; height: 100%; display: block; }
+
+      .showcase-mark {
+        position: absolute;
+        top: 36px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 32px;
+        letter-spacing: 0.08em;
+        color: var(--stage-ink);
+        z-index: 5;
+      }
+      .showcase-mark .accent { color: var(--accent); margin: 0 4px; }
+
+      .showcase-tag {
+        position: absolute;
+        top: 50%;
+        right: 28px;
+        transform: translateY(-50%) rotate(90deg);
+        transform-origin: center right;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.32em;
+        color: var(--stage-dim);
+        font-weight: 600;
+        z-index: 5;
+      }
+      @media (max-width: 800px) { .showcase-tag { display: none; } }
+
+      .showcase-hint {
+        position: absolute;
+        top: 100px;
+        right: 36px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        color: var(--stage-dim);
+        font-weight: 600;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .showcase-hint .pulse {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: blink 1.6s infinite;
+      }
+      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+      @media (max-width: 1100px) { .showcase-hint { display: none; } }
+
+      .showcase-stage {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        height: 100vh;
+        max-height: 800px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 110px 0 100px;
+      }
+
+      .bat-canvas {
+        position: relative;
+        height: 100%;
+        max-height: 620px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: breath 7s ease-in-out infinite;
+        will-change: transform;
+      }
+      @keyframes breath {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-6px) scale(1.005); }
+      }
+      .bat-canvas svg {
+        height: 100%;
+        width: auto;
+        display: block;
+        filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 30px rgba(22, 163, 74, 0.06));
+      }
+      .bat-canvas svg .layer {
+        opacity: 1;
+        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center;
+      }
+
+      /* Data-reveal driven layer visibility. Layer 0 always visible. */
+      .showcase-stage[data-reveal="0"] .layer-1,
+      .showcase-stage[data-reveal="0"] .layer-2,
+      .showcase-stage[data-reveal="0"] .layer-3,
+      .showcase-stage[data-reveal="0"] .layer-4,
+      .showcase-stage[data-reveal="0"] .layer-5 { opacity: 0; }
+      .showcase-stage[data-reveal="1"] .layer-2,
+      .showcase-stage[data-reveal="1"] .layer-3,
+      .showcase-stage[data-reveal="1"] .layer-4,
+      .showcase-stage[data-reveal="1"] .layer-5 { opacity: 0; }
+      .showcase-stage[data-reveal="2"] .layer-3,
+      .showcase-stage[data-reveal="2"] .layer-4,
+      .showcase-stage[data-reveal="2"] .layer-5 { opacity: 0; }
+      .showcase-stage[data-reveal="3"] .layer-4,
+      .showcase-stage[data-reveal="3"] .layer-5 { opacity: 0; }
+      .showcase-stage[data-reveal="4"] .layer-5 { opacity: 0; }
+
+      .anno {
+        position: absolute;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--stage-ink);
+        opacity: 0;
+        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        z-index: 4;
+        max-width: 240px;
+      }
+      .showcase-stage[data-reveal="0"] .anno-0,
+      .showcase-stage[data-reveal="1"] .anno-0,
+      .showcase-stage[data-reveal="1"] .anno-1,
+      .showcase-stage[data-reveal="2"] .anno-0,
+      .showcase-stage[data-reveal="2"] .anno-1,
+      .showcase-stage[data-reveal="2"] .anno-2,
+      .showcase-stage[data-reveal="3"] .anno-0,
+      .showcase-stage[data-reveal="3"] .anno-1,
+      .showcase-stage[data-reveal="3"] .anno-2,
+      .showcase-stage[data-reveal="3"] .anno-3,
+      .showcase-stage[data-reveal="4"] .anno-0,
+      .showcase-stage[data-reveal="4"] .anno-1,
+      .showcase-stage[data-reveal="4"] .anno-2,
+      .showcase-stage[data-reveal="4"] .anno-3,
+      .showcase-stage[data-reveal="4"] .anno-4,
+      .showcase-stage[data-reveal="5"] .anno { opacity: 1; }
+
+      .anno .anno-line {
+        display: block;
+        height: 1px;
+        background: var(--accent);
+        margin-bottom: 10px;
+      }
+      .anno .anno-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 18px;
+        letter-spacing: 0.04em;
+        color: var(--stage-ink);
+        margin-bottom: 4px;
+      }
+      .anno .anno-desc {
+        color: var(--stage-dim);
+        font-size: 10px;
+        line-height: 1.6;
+        letter-spacing: 0.08em;
+        text-transform: none;
+      }
+
+      .showcase-sport-card {
+        position: absolute;
+        bottom: 40px;
+        left: 36px;
+        width: 220px;
+        border-top: 1px solid var(--stage-line);
+        padding-top: 14px;
+        z-index: 5;
+        transition: all 0.4s ease;
+      }
+      @media (max-width: 800px) { .showcase-sport-card { left: 20px; width: 160px; bottom: 120px; } }
+      .ssc-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        color: var(--stage-dim);
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .ssc-icon { height: 60px; margin: 8px 0; }
+      .ssc-icon svg { height: 100%; color: var(--stage-ink); }
+      .ssc-name {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: var(--stage-ink);
+      }
+      .ssc-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        color: var(--stage-dim);
+        margin-top: 8px;
+        text-transform: uppercase;
+      }
+
+      .showcase-bottom {
+        position: absolute;
+        bottom: 40px;
+        right: 36px;
+        text-align: right;
+        z-index: 5;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--stage-dim);
+        letter-spacing: 0.18em;
+        font-weight: 600;
+      }
+      @media (max-width: 800px) { .showcase-bottom { right: 20px; bottom: 120px; } }
+      .showcase-bottom .v {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 28px;
+        color: var(--stage-ink);
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+      .showcase-bottom .v .accent { color: var(--accent); }
+
+      .showcase-arrows {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        z-index: 6;
+      }
+      .showcase-arrows button {
+        width: 46px; height: 46px;
+        border: 1px solid var(--stage-line);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        color: var(--stage-ink);
+        transition: all 0.2s ease;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .showcase-arrows button:hover {
+        background: var(--accent);
+        color: var(--bg-3);
+        border-color: var(--accent);
+      }
+      .sport-dots { display: flex; align-items: center; gap: 8px; }
+      .sport-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--stage-dim);
+        opacity: 0.5;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .sport-dot.active {
+        background: var(--accent);
+        width: 28px;
+        border-radius: 4px;
+        opacity: 1;
+      }
+
+      .reveal-meter {
+        position: absolute;
+        right: 28px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 240px;
+        width: 2px;
+        background: var(--stage-line);
+        z-index: 5;
+      }
+      @media (max-width: 1100px) { .reveal-meter { display: none; } }
+      .reveal-meter-fill {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        background: linear-gradient(to top, var(--accent), var(--amber));
+        transition: height 0.4s ease;
+        box-shadow: 0 0 10px var(--accent);
+      }
+      .reveal-meter::before {
+        content: 'STACK';
+        position: absolute;
+        top: -20px;
+        left: -10px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: var(--stage-dim);
+        font-weight: 600;
+      }
+      .reveal-meter::after {
+        content: attr(data-level) '/5';
+        position: absolute;
+        bottom: -22px;
+        left: -8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* Sport crossfade — soft */
+      .bat-fade {
+        transition: opacity 0.35s ease;
+      }
+      .bat-fade.fading { opacity: 0; }
+
+
+      /* ============ THREE SPORTS ============ */
+      .three-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+        margin-top: 50px;
+      }
+      @media (min-width: 900px) { .three-grid { grid-template-columns: repeat(3, 1fr); } }
+      .three-cell {
+        background: var(--paper);
+        padding: 50px 36px;
+        transition: background 0.3s ease;
+        cursor: pointer;
+        position: relative;
+      }
+      .three-cell:hover { background: var(--bg-3); }
+      .three-cell.active { background: var(--ink); color: var(--bg-3); }
+      .three-cell.active .three-num,
+      .three-cell.active .three-sub,
+      .three-cell.active .three-meta,
+      .three-cell.active p { color: var(--bg-3); opacity: 0.85; }
+      .three-cell.active .three-icon-bg { background: var(--accent); }
+      .three-cell.active .three-icon-bg svg { color: var(--bg-3); }
+      .three-cell.active .three-meta { border-top-color: rgba(255,255,255,0.15); }
+      .three-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--ink-dim);
+        letter-spacing: 0.2em;
+        margin-bottom: 18px;
+        font-weight: 600;
+      }
+      .three-icon-bg {
+        width: 64px; height: 64px;
+        background: var(--accent-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+      }
+      .three-icon-bg svg { color: var(--accent); height: 36px; width: 36px; }
+      .three-cell h4 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 38px;
+        margin: 0 0 6px;
+        letter-spacing: 0.02em;
+      }
+      .three-sub {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--ink-dim);
+        letter-spacing: 0.14em;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+      }
+      .three-cell p {
+        margin: 0 0 20px;
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--ink-dim);
+      }
+      .three-meta {
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--ink-dim);
+        letter-spacing: 0.08em;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      /* ============ MVP CAPABILITIES ============ */
+      .mvp-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+        margin-top: 60px;
+      }
+      @media (min-width: 700px) { .mvp-grid { grid-template-columns: 1fr 1fr; } }
+      @media (min-width: 1100px) { .mvp-grid { grid-template-columns: repeat(3, 1fr); } }
+      .mvp-card {
+        background: var(--paper);
+        padding: 36px 28px;
+        position: relative;
+        transition: background 0.3s ease;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+      }
+      .mvp-card:hover { background: var(--bg-3); }
+      .mvp-card .icon-block {
+        width: 52px; height: 52px;
+        border: 1.5px solid var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        color: var(--accent);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 26px;
+        background: var(--accent-soft);
+      }
+      .mvp-card h4 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 28px;
+        margin: 0 0 12px;
+        letter-spacing: 0.02em;
+      }
+      .mvp-card p {
+        margin: 0;
+        color: var(--ink-dim);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .mvp-card .marker {
+        position: absolute;
+        top: 20px; right: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--ink-dim);
+        letter-spacing: 0.1em;
+        font-weight: 500;
+      }
+
+      /* ============ HOW IT WORKS ============ */
+      .how-flow {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        margin-top: 50px;
+      }
+      @media (min-width: 900px) { .how-flow { grid-template-columns: repeat(4, 1fr); } }
+      .how-step {
+        padding: 32px 28px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+      }
+      .how-step .num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 64px;
+        color: var(--accent);
+        line-height: 1;
+        margin-bottom: 14px;
+      }
+      .how-step h5 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 24px;
+        margin: 0 0 8px;
+        letter-spacing: 0.04em;
+      }
+      .how-step p {
+        font-size: 13px;
+        color: var(--ink-dim);
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      /* ============ TUNING TABLE ============ */
+      .tune-wrap {
+        background: var(--bg-3);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .tune-table {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        margin-top: 40px;
+        overflow-x: auto;
+      }
+      .tune-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 720px;
+      }
+      .tune-table th, .tune-table td {
+        padding: 18px 24px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+      .tune-table th {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--ink-dim);
+        font-weight: 700;
+        background: var(--bg-3);
+      }
+      .tune-table td.col-name {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        color: var(--ink);
+        letter-spacing: 0.02em;
+        width: 240px;
+      }
+      .tune-table td.col-val { color: var(--accent); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; }
+      .tune-table tr:last-child td { border-bottom: none; }
+
+      /* ============ TIMELINE ============ */
+      .timeline { margin-top: 50px; position: relative; }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 110px;
+        top: 0; bottom: 0;
+        width: 1px;
+        background: var(--line);
+      }
+      @media (max-width: 700px) { .timeline::before { left: 60px; } }
+      .tl-row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 40px;
+        padding: 36px 0;
+        border-bottom: 1px solid var(--line);
+        position: relative;
+      }
+      @media (max-width: 700px) {
+        .tl-row { grid-template-columns: 60px 1fr; gap: 20px; padding: 24px 0; }
+      }
+      .tl-week {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: var(--ink-dim);
+        position: relative;
+      }
+      .tl-week::after {
+        content: '';
+        position: absolute;
+        right: -33px;
+        top: 8px;
+        width: 11px; height: 11px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 0 4px var(--bg);
+      }
+      @media (max-width: 700px) { .tl-week::after { right: -18px; } }
+      .tl-row.active .tl-week { color: var(--accent); }
+      .tl-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(28px, 4vw, 44px);
+        margin: 0 0 10px;
+        letter-spacing: 0.01em;
+      }
+      .tl-body { color: var(--ink-dim); font-size: 15px; line-height: 1.6; max-width: 760px; }
+
+      /* ============ STATS ============ */
+      .stats { background: var(--accent); color: var(--bg-3); }
+      .stats .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--accent-2);
+        border-top: 1px solid var(--accent-2);
+        border-bottom: 1px solid var(--accent-2);
+      }
+      @media (min-width: 900px) { .stats .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+      .stat-cell { background: var(--accent); padding: 56px 32px; }
+      .stat-num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(60px, 9vw, 120px);
+        line-height: 0.9;
+      }
+      .stat-label {
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+        margin-top: 14px;
+      }
+      .stats-heading { padding: 80px 0 30px; }
+      .stats-heading h3 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(40px, 7vw, 100px);
+        margin: 0;
+        line-height: 0.9;
+        max-width: 900px;
+      }
+
+      /* ============ DEMO ============ */
+      .demo { background: var(--bg-2); border-top: 1px solid var(--line); }
+      .demo-stage {
+        margin-top: 50px;
+        padding: 50px;
+        background: var(--ink);
+        color: var(--bg-3);
+        position: relative;
+        overflow: hidden;
+      }
+      @media (max-width: 700px) { .demo-stage { padding: 28px; } }
+      .demo-stage::before {
+        content: 'LIVE';
+        position: absolute;
+        top: 22px; right: 22px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+        padding: 4px 10px;
+        border: 1px solid var(--accent);
+        animation: blink 2s infinite;
+      }
+      .demo-header {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+        letter-spacing: 0.12em;
+        margin-bottom: 24px;
+        display: flex; gap: 28px; flex-wrap: wrap;
+      }
+      .demo-header .red { color: var(--accent); }
+      .demo-event {
+        display: grid;
+        grid-template-columns: 70px 1fr 110px 140px;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        align-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+      }
+      @media (max-width: 700px) {
+        .demo-event { grid-template-columns: 60px 1fr 90px; }
+        .demo-event .dist { display: none; }
+      }
+      .demo-event .ts { color: rgba(255,255,255,0.5); font-size: 11px; }
+      .demo-event .verdict {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 24px;
+        letter-spacing: 0.04em;
+      }
+      .demo-event .verdict.hit { color: var(--accent); }
+      .demo-event .verdict.miss { color: rgba(255,255,255,0.4); }
+      .demo-event .shot, .demo-event .dist {
+        font-size: 11px;
+        color: rgba(255,255,255,0.7);
+        text-align: right;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .demo-summary {
+        margin-top: 28px;
+        padding-top: 22px;
+        border-top: 1px solid var(--accent);
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 26px;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        line-height: 1.2;
+      }
+
+      /* ============ TEAM ============ */
+      .team-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+        margin-top: 50px;
+      }
+      @media (min-width: 900px) { .team-grid { grid-template-columns: repeat(3, 1fr); } }
+      .team-cell {
+        background: var(--paper);
+        padding: 44px 32px;
+        position: relative;
+        transition: background 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      }
+      .team-cell:hover { background: var(--bg-3); }
+      .team-mono {
+        width: 80px; height: 80px;
+        background: var(--accent);
+        color: var(--bg-3);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 38px;
+        letter-spacing: 0.04em;
+        margin-bottom: 24px;
+      }
+      .team-cell .role {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .team-cell h5 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 32px;
+        margin: 0 0 6px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+      }
+      .team-cell .institution {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--ink-dim);
+        margin-bottom: 22px;
+        letter-spacing: 0.06em;
+      }
+      .team-cell .lane {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 16px;
+        color: var(--accent-2);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 18px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .team-cell p {
+        font-size: 14px;
+        color: var(--ink-dim);
+        line-height: 1.6;
+        margin: 0;
+      }
+      .team-cell .placeholder { font-style: italic; opacity: 0.7; }
+      .team-cell .badge {
+        position: absolute;
+        top: 20px; right: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--ink-dim);
+        letter-spacing: 0.1em;
+      }
+
+      /* ============ TESTIMONIALS ============ */
+      .test-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        margin-top: 50px;
+      }
+      @media (min-width: 800px) { .test-grid { grid-template-columns: repeat(3, 1fr); } }
+      .test-card {
+        padding: 36px 30px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        position: relative;
+      }
+      .test-card .quote-mark {
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 80px;
+        line-height: 0.4;
+        color: var(--accent);
+        height: 36px;
+        font-style: italic;
+      }
+      .test-card .test-body {
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        font-size: 18px;
+        line-height: 1.45;
+        color: var(--ink-2);
+        margin: 16px 0 22px;
+      }
+      .test-card .test-meta {
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+      .test-card .test-name {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 20px;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+      }
+      .test-card .test-where {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        color: var(--ink-dim);
+        margin-top: 4px;
+        text-transform: uppercase;
+      }
+
+      /* ============ ROADMAP ============ */
+      .roadmap {
+        margin-top: 50px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      @media (min-width: 900px) { .roadmap { grid-template-columns: repeat(4, 1fr); } }
+      .roadmap-cell { padding: 36px 28px; background: var(--paper); }
+      .roadmap-cell .phase {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        margin-bottom: 14px;
+        font-weight: 700;
+      }
+      .roadmap-cell h6 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 30px;
+        margin: 0 0 16px;
+        letter-spacing: 0.02em;
+      }
+      .roadmap-cell ul { margin: 0; padding-left: 0; list-style: none; }
+      .roadmap-cell li {
+        font-size: 13px;
+        color: var(--ink-dim);
+        line-height: 1.5;
+        padding: 8px 0;
+        border-top: 1px solid var(--line-soft);
+      }
+      .roadmap-cell li::before {
+        content: '— ';
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* ============ CLOSING ============ */
+      .closing {
+        background: var(--bg);
+        padding: 140px 0 70px;
+        position: relative;
+        overflow: hidden;
+        border-top: 1px solid var(--line);
+      }
+      .closing-bg {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 1600px; height: 1600px;
+        background: radial-gradient(circle, var(--accent-soft), transparent 65%);
+        pointer-events: none;
+        filter: blur(40px);
+      }
+      .closing-h {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(48px, 10vw, 160px);
+        line-height: 1.06;
+        text-align: center;
+        margin: 0 auto;
+        max-width: 1400px;
+        position: relative;
+      }
+      .closing-h .accent { color: var(--accent); }
+      .closing-h .serif-i {
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        text-transform: none;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: var(--accent-2);
+        /* Fraunces italic has a tall descender; shrink slightly and lift
+           so the "p" in "practice" doesn't crash into the next line. */
+        font-size: 0.88em;
+        display: inline-block;
+        vertical-align: -0.04em;
+      }
+      .closing-cta {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 56px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+        padding: 18px 32px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-family: inherit;
+      }
+      .btn-primary { background: var(--accent); color: var(--bg-3); }
+      .btn-primary:hover { background: var(--accent-2); transform: translateY(-2px); }
+      .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+      .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+      /* ============ FOOTER ============ */
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 40px 0;
+        font-size: 12px;
+        color: var(--ink-dim);
+        letter-spacing: 0.04em;
+      }
+      footer .row {
+        display: flex; justify-content: space-between;
+        flex-wrap: wrap; gap: 20px; align-items: center;
+      }
+      footer .brand {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 18px;
+        color: var(--ink);
+        letter-spacing: 0.08em;
+      }
+
+      /* ============ REVEAL (header-only) ============ */
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .reveal.in { opacity: 1; transform: none; }
+      .reveal.d1 { transition-delay: 0.07s; }
+      .reveal.d2 { transition-delay: 0.14s; }
+      .reveal.d3 { transition-delay: 0.21s; }
+
+      @keyframes fade-up {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      /* ============ LOADER ============ */
+      .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 24px;
+        transition: opacity 0.7s ease, visibility 0.7s ease;
+      }
+      .loader.gone { opacity: 0; visibility: hidden; }
+      .loader-text {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 56px;
+        letter-spacing: 0.04em;
+      }
+      .loader-text .accent { color: var(--accent); }
+      .loader-bar {
+        width: 220px; height: 2px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .loader-bar::after {
+        content: '';
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        animation: load 1.4s ease forwards;
+      }
+      @keyframes load { from { width: 0; } to { width: 100%; } }
+      .loader-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--ink-dim);
+        letter-spacing: 0.18em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" data-presets="react">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import gsap from 'gsap';
+      import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      const { Suspense, useEffect, useRef, useState, useMemo, useCallback, createContext, useContext, memo } = React;
+
+      /* ============ SPORT DATA ============ */
+      const SportContext = createContext(null);
+      const useSport = () => useContext(SportContext);
+
+      const SPORTS = [
+        {
+          id: 'cricket',
+          short: 'Cricket',
+          full: 'Blind Cricket',
+          unit: 'BAT',
+          mvp: [
+            { n: '01', icon: '◉', title: 'Hit / Miss', body: 'Sharp impact spike detection from the willow on the audible ball — the bat\'s headline capability.' },
+            { n: '02', icon: '∿', title: 'Shot Recognition', body: 'Six classes — cover drive, pull, cut, sweep, straight drive, defensive — from the swing\'s gyro signature.' },
+            { n: '03', icon: '↗', title: 'Distance Bracket', body: 'Translates impact energy into an honest range — tap, short, mid, long, boundary. No false precision.' },
+            { n: '04', icon: '⌁', title: 'Bluetooth Link', body: 'Compact event per shot: swing, impact, peak g, shot class, bracket. Low-latency, on-device.' },
+            { n: '05', icon: '♪', title: 'Voice · 5 Languages', body: 'Pre-recorded clips in English, हिंदी, தமிழ், বাংলা, मराठी. Instant, offline.' },
+            { n: '06', icon: '∑', title: 'Session Memory', body: 'Balls, hits, misses, hit %, streaks, shot mix. Spoken summary in the chosen language.' },
+          ],
+          how: [
+            { n: '01', title: 'Swing', body: 'Gyroscope peak crosses 2.5 rad/s. The swing has begun.' },
+            { n: '02', title: 'Classify', body: 'Sweep angle + duration + peak velocity → one of six shots in ~40 ms.' },
+            { n: '03', title: 'Impact', body: 'Accelerometer watches a 100–150 ms window. Spike size sets verdict + bracket.' },
+            { n: '04', title: 'Speak', body: 'Phone plays the matching clip in the chosen language. Feels instant.' },
+          ],
+          tune: [
+            ['Bat mass', '~1.2 kg'],
+            ['Swing window', '1 – 2 s'],
+            ['Swing trigger', '2.5 rad/s gyro peak'],
+            ['Impact threshold', '1.5 g spike'],
+            ['Quality buckets', 'Edge < 2g · Mid 2–3g · Clean > 3g'],
+            ['Target hit/miss accuracy', '87 – 92%'],
+            ['Sample size to date', '150+ swings'],
+            ['Feedback latency', '< 200 ms'],
+          ],
+          demo: [
+            { ts: '00:00.42', verdict: 'HIT',  shot: 'Cover drive',   dist: 'Long · 30–50m' },
+            { ts: '00:04.18', verdict: 'MISS', shot: 'Pull',          dist: '—' },
+            { ts: '00:08.91', verdict: 'HIT',  shot: 'Cut',           dist: 'Mid · 15–30m' },
+            { ts: '00:13.07', verdict: 'HIT',  shot: 'Defensive',     dist: 'Tap · 0–5m' },
+            { ts: '00:17.55', verdict: 'MISS', shot: 'Sweep',         dist: '—' },
+            { ts: '00:22.13', verdict: 'HIT',  shot: 'Straight drive', dist: 'Boundary · 50m+' },
+          ],
+          summary: (h, t, p) => `तुमने ${h} में से ${t} गेंदें मारीं — यानी ${p} प्रतिशत।`,
+          testimonials: [
+            { body: 'I can finally know if I hit it without asking my coach. The voice tells me, and I just keep batting.', name: 'Player · Pilot session', where: 'Blind Cricket Net · India' },
+            { body: 'My students get instant feedback on every ball. I can focus on technique instead of calling out.', name: 'Coach · Pilot session', where: 'Blind Cricket Association' },
+            { body: 'The summary at the end told me my hit rate improved across the week. That kept me going.', name: 'Player · Pilot session', where: 'School-level club' },
+          ],
+        },
+        {
+          id: 'paddleball',
+          short: 'Paddleball',
+          full: 'Blind Paddleball',
+          unit: 'PADDLE',
+          mvp: [
+            { n: '01', icon: '◉', title: 'Hit / Miss', body: 'Sensitive impact detection tuned for the lighter paddle and softer wall rebound.' },
+            { n: '02', icon: '🔄', title: 'Rally Counter', body: 'Consecutive hits within 500 ms form a rally. Streak announced at 3, 5, 10, 15, 20.' },
+            { n: '03', icon: '∿', title: 'Consistency Score', body: 'Hit % across a session, longest rally, average rally length. Rhythm in numbers.' },
+            { n: '04', icon: '⌁', title: 'Bluetooth Link', body: 'Stream per-shot events plus rally state. Less than 200 ms end-to-end.' },
+            { n: '05', icon: '♪', title: 'Voice · 5 Languages', body: 'All call-outs — Hit, Rally live, streak counts — in five languages.' },
+            { n: '06', icon: '∑', title: 'Session Memory', body: 'Shots, hits, misses, hit %, longest streak. Multilingual spoken summary.' },
+          ],
+          how: [
+            { n: '01', title: 'Swing', body: 'Lighter 1.8 rad/s trigger catches soft paddle motions cleanly.' },
+            { n: '02', title: 'Window', body: 'Tighter 50–100 ms window catches rapid-fire wall returns.' },
+            { n: '03', title: 'Rally', body: 'Hits within 500 ms chain into a rally. Streak voice fires at milestones.' },
+            { n: '04', title: 'Speak', body: 'Voice says "Hit" + streak number in the chosen language.' },
+          ],
+          tune: [
+            ['Paddle mass', '~200 g'],
+            ['Shot frequency', '10 – 30 / minute'],
+            ['Swing trigger', '1.8 rad/s gyro peak'],
+            ['Impact threshold', '1.0 g spike'],
+            ['Rally window', '500 ms between hits'],
+            ['Rally call-outs', '3 · 5 · 10 · 15 · 20'],
+            ['Target hit/miss accuracy', '84 – 90%'],
+            ['Feedback latency', '< 200 ms'],
+          ],
+          demo: [
+            { ts: '00:00.40', verdict: 'HIT',  shot: 'Rally · 1', dist: '1.0 g' },
+            { ts: '00:01.18', verdict: 'HIT',  shot: 'Rally · 2', dist: '1.2 g' },
+            { ts: '00:01.96', verdict: 'HIT',  shot: 'Rally · 3 — "Three!"', dist: '1.1 g' },
+            { ts: '00:02.74', verdict: 'HIT',  shot: 'Rally · 4', dist: '1.3 g' },
+            { ts: '00:03.55', verdict: 'HIT',  shot: 'Rally · 5 — "Five!"', dist: '1.0 g' },
+            { ts: '00:04.42', verdict: 'MISS', shot: 'Rally ended at 5', dist: '—' },
+          ],
+          summary: (h, t, p) => `${t} shots, ${h} hits — ${p}% consistency. Longest rally: 5.`,
+          testimonials: [
+            { body: 'I can finally practice against the wall by myself. The device counts my rallies aloud.', name: 'Player · Pilot session', where: 'South India blind school' },
+            { body: 'As a coach I can train three paddleball players at once. Vocal Willow tells them if they hit.', name: 'Coach · Pilot session', where: 'Regional paddleball club' },
+            { body: 'When the voice says "Five!" mid-rally, I push harder for the next one.', name: 'Player · Pilot session', where: 'School-level player' },
+          ],
+        },
+        {
+          id: 'pickleball',
+          short: 'Pickleball',
+          full: 'Blind Pickleball',
+          unit: 'PADDLE',
+          mvp: [
+            { n: '01', icon: '◉', title: 'In / Out', body: 'Touch-sensitive detection of clean court hits vs. net taps — tuned for finesse play.' },
+            { n: '02', icon: '·', title: 'Dink Detection', body: 'Soft touches at the kitchen line have their own signature — distinguishable from drives.' },
+            { n: '03', icon: '∿', title: 'Control Score', body: 'Hit %, unforced errors, soft-shot ratio. Court feel quantified.' },
+            { n: '04', icon: '⌁', title: 'Bluetooth Link', body: 'Per-shot events. Optional accelerometer clipping flags over-power.' },
+            { n: '05', icon: '♪', title: 'Voice · 5 Languages', body: 'Calls In, Net, Good touch, Point in five languages, instantly.' },
+            { n: '06', icon: '∑', title: 'Session Memory', body: 'Shots, court hits, net errors, win %. Spoken summary at session end.' },
+          ],
+          how: [
+            { n: '01', title: 'Swing', body: 'Soft 1.5 rad/s trigger catches finesse swings without false-firing.' },
+            { n: '02', title: 'Window', body: '80–120 ms window covers full swing-through to contact.' },
+            { n: '03', title: 'Touch', body: 'Spike size separates clean hit (>1 g) from net brush (<0.8 g).' },
+            { n: '04', title: 'Speak', body: 'Voice calls In / Net / Good touch in the chosen language.' },
+          ],
+          tune: [
+            ['Paddle mass', '~150 g'],
+            ['Play tempo', 'Slow / control'],
+            ['Swing trigger', '1.5 rad/s gyro peak'],
+            ['Impact threshold', '0.8 g spike'],
+            ['Net vs hit separation', 'Spike width + peak'],
+            ['Over-power flag', 'Accelerometer clipping (v2)'],
+            ['Target hit/miss accuracy', '85 – 91%'],
+            ['Feedback latency', '< 200 ms'],
+          ],
+          demo: [
+            { ts: '00:00.40', verdict: 'HIT',  shot: 'Drive — In',       dist: '1.4 g' },
+            { ts: '00:03.18', verdict: 'HIT',  shot: 'Dink — Good touch', dist: '0.9 g' },
+            { ts: '00:06.91', verdict: 'MISS', shot: 'Net',               dist: '0.5 g' },
+            { ts: '00:09.07', verdict: 'HIT',  shot: 'Volley — In',      dist: '1.6 g' },
+            { ts: '00:12.55', verdict: 'HIT',  shot: 'Dink — Good touch', dist: '0.8 g' },
+            { ts: '00:16.13', verdict: 'HIT',  shot: 'Drive — In',       dist: '1.5 g' },
+          ],
+          summary: (h, t, p) => `${h} good shots out of ${t}. ${p}% court control.`,
+          testimonials: [
+            { body: 'Pickleball is my new favourite sport. Vocal Willow lets me train without a partner watching.', name: 'Player · Pilot session', where: 'School pickleball pilot' },
+            { body: 'The feedback is instant. I know if I\'m improving each session.', name: 'Player · Pilot session', where: 'Community club' },
+            { body: 'Finally a tool that recognises a dink as different from a drive. That\'s the game.', name: 'Coach · Pilot session', where: 'Para-pickleball coach' },
+          ],
+        },
+      ];
+
+      /* ============ HOOKS ============ */
+      function useReveal() {
+        const ref = useRef(null);
+        useEffect(() => {
+          const node = ref.current;
+          if (!node) return;
+          const targets = node.querySelectorAll('.reveal');
+          if (!targets.length) return;
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                e.target.classList.add('in');
+                io.unobserve(e.target);
+              }
+            });
+          }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+          targets.forEach((t) => io.observe(t));
+          return () => io.disconnect();
+        }, []);
+        return ref;
+      }
+
+      /* ============ LOADER ============ */
+      function Loader() {
+        const [gone, setGone] = useState(false);
+        useEffect(() => {
+          const t = setTimeout(() => setGone(true), 1500);
+          return () => clearTimeout(t);
+        }, []);
+        return (
+          <div className={`loader ${gone ? 'gone' : ''}`}>
+            <div className="loader-text">VOCAL<span className="accent"> WILLOW</span></div>
+            <div className="loader-bar"></div>
+            <div className="loader-meta">CALIBRATING · 247 Hz · MULTI-SPORT</div>
+          </div>
+        );
+      }
+
+      /* ============ NAV ============ */
+      function Nav() {
+        const [scrolled, setScrolled] = useState(false);
+        const { sportIdx, setSportIdx } = useSport();
+        useEffect(() => {
+          const on = () => setScrolled(window.scrollY > 50);
+          window.addEventListener('scroll', on, { passive: true });
+          on();
+          return () => window.removeEventListener('scroll', on);
+        }, []);
+        const go = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        return (
+          <nav className={`nav ${scrolled ? 'scrolled' : ''}`}>
+            <div className="nav-brand">
+              <span className="nav-mark">V</span>
+              VOCAL WILLOW
+            </div>
+            <div className="nav-links">
+              <a onClick={() => go('manifesto')}>Manifesto</a>
+              <a onClick={() => go('showcase')}>The Sensor</a>
+              <a onClick={() => go('sports')}>Sports</a>
+              <a onClick={() => go('how')}>How it works</a>
+              <a onClick={() => go('demo')}>Demo</a>
+              <a onClick={() => go('team')}>Team</a>
+              <a onClick={() => go('roadmap')}>Roadmap</a>
+            </div>
+            <div className="sport-pill">
+              {SPORTS.map((s, i) => (
+                <button
+                  key={s.id}
+                  className={i === sportIdx ? 'active' : ''}
+                  onClick={() => setSportIdx(i)}
+                >
+                  {s.short}
+                </button>
+              ))}
+            </div>
+          </nav>
+        );
+      }
+
+      /* ============ HERO ============ */
+      function Hero() {
+        const { sport } = useSport();
+        return (
+          <section className="hero">
+            <div className="hero-bg-grid"></div>
+            <div className="hero-glow"></div>
+
+            <div className="container">
+              <div className="hero-eyebrow">
+                ONE SENSOR · THREE SPORTS · MADE IN INDIA
+              </div>
+              <h1 className="hero-title display">
+                Vocal<span className="accent"> Willow</span>
+              </h1>
+            </div>
+
+            <div className="container">
+              <div className="hero-row">
+                <p className="hero-pitch">
+                  A handle-mounted sensor that tells a blind athlete what just happened —
+                  {' '}<em>Hit</em>, <em>Miss</em>, the <em>shot</em>, the <em>rally</em>, the <em>distance</em> —
+                  instantly, audibly, in their own language.
+                  {' '}<span className="serif-i">The bat already knows what happened.</span>
+                  {' '}One platform for <strong>cricket</strong>, <strong>paddleball</strong>, and <strong>pickleball</strong>.
+                  No coach in the loop.
+                </p>
+
+                <div className="hero-stats">
+                  <div className="hero-stat">
+                    <span className="hero-stat-num"><span className="red">3</span></span>
+                    <span className="hero-stat-label">Sports supported</span>
+                  </div>
+                  <div className="hero-stat">
+                    <span className="hero-stat-num"><span className="red">5</span></span>
+                    <span className="hero-stat-label">Languages from day one</span>
+                  </div>
+                  <div className="hero-stat">
+                    <span className="hero-stat-num">~₹1.5<span className="red">K</span></span>
+                    <span className="hero-stat-label">Total bill of materials</span>
+                  </div>
+                  <div className="hero-stat">
+                    <span className="hero-stat-num">&lt;200<span className="red">ms</span></span>
+                    <span className="hero-stat-label">Swing-to-spoken latency</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="hero-scroll">
+              <span>Scroll · Currently viewing: {sport.short}</span>
+              <span className="hero-scroll-line"></span>
+            </div>
+          </section>
+        );
+      }
+
+      function Ticker() {
+        const items = ['Cricket', 'Paddleball', 'Pickleball', 'Independent practice', 'Audio-first', 'Rally counting', 'Dink detection', '5 Indian languages', '~₹1,500 BOM', 'Made in India'];
+        const Row = () => (
+          <span>
+            {items.map((t, i) => (
+              <React.Fragment key={i}>
+                {t}<span className="dot"></span>
+              </React.Fragment>
+            ))}
+          </span>
+        );
+        return (
+          <div className="ticker">
+            <div className="ticker-track">
+              <Row /><Row /><Row />
+            </div>
+          </div>
+        );
+      }
+
+      /* ============ MANIFESTO ============ */
+      function Manifesto() {
+        const ref = useReveal();
+        return (
+          <section id="manifesto" className="manifesto" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">01 / Reframe</span>
+                <span>The Honest Core</span>
+              </div>
+              <h2 className="manifesto-quote reveal d1">
+                The bat — or the paddle — <span className="accent">already knows</span> what happened. <br/>
+                <span className="serif-i">We just read it honestly, and speak it back.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2" style={{ marginTop: 36, maxWidth: 900 }}>
+                Any swing into a ball produces a sharp, unmistakable impact spike. The motion of the
+                swing tells you which shot was played. The energy of contact tells you roughly how
+                hard. None of this needs cloud, accounts, or a sighted helper. It needs a sensor
+                mounted right, a phone listening over Bluetooth, and a voice that speaks the truth
+                in the player's own language — for whichever sport they love.
+              </p>
+              <p className="manifesto-attr reveal d3">— Vocal Willow project manifesto · v1</p>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ WEBGL FLOW BACKDROP ============ */
+      /* A calming, cursor-aware fluid that sits behind the bat. Single
+         fullscreen quad + fragment shader doing domain-warped FBM noise.
+         Cursor pulls the flow toward it gently; emerald + deep-green
+         palette with a faint amber whisper near the cursor center. */
+      const ShowcaseWebGL = memo(function ShowcaseWebGL() {
+        const canvasRef = React.useRef(null);
+        React.useEffect(() => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const host = canvas.parentElement?.parentElement;   // .showcase section
+          if (!host) return;
+
+          const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false })
+                  || canvas.getContext('experimental-webgl', { alpha: true });
+          if (!gl) return;                                    // graceful degrade
+
+          const vsSrc = [
+            'attribute vec2 a_pos;',
+            'varying vec2 v_uv;',
+            'void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }'
+          ].join('\n');
+
+          const fsSrc = [
+            'precision highp float;',
+            'varying vec2 v_uv;',
+            'uniform vec2 u_res;',
+            'uniform vec2 u_mouse;',
+            'uniform float u_time;',
+            // simplex 2D noise (Ashima Arts)
+            'vec3 mod289(vec3 x){ return x - floor(x*(1.0/289.0))*289.0; }',
+            'vec2 mod289(vec2 x){ return x - floor(x*(1.0/289.0))*289.0; }',
+            'vec3 permute(vec3 x){ return mod289(((x*34.0)+1.0)*x); }',
+            'float snoise(vec2 v){',
+            '  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);',
+            '  vec2 i = floor(v + dot(v, C.yy));',
+            '  vec2 x0 = v - i + dot(i, C.xx);',
+            '  vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);',
+            '  vec4 x12 = x0.xyxy + C.xxzz; x12.xy -= i1;',
+            '  i = mod289(i);',
+            '  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));',
+            '  vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);',
+            '  m = m*m; m = m*m;',
+            '  vec3 x = 2.0 * fract(p * C.www) - 1.0;',
+            '  vec3 h = abs(x) - 0.5;',
+            '  vec3 ox = floor(x + 0.5);',
+            '  vec3 a0 = x - ox;',
+            '  m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);',
+            '  vec3 g;',
+            '  g.x  = a0.x  * x0.x  + h.x  * x0.y;',
+            '  g.yz = a0.yz * x12.xz + h.yz * x12.yw;',
+            '  return 130.0 * dot(m, g);',
+            '}',
+            'float fbm(vec2 p){',
+            '  float v = 0.0; float a = 0.5;',
+            '  for (int i = 0; i < 5; i++){ v += a*snoise(p); p *= 2.0; a *= 0.5; }',
+            '  return v;',
+            '}',
+            'void main(){',
+            '  vec2 uv = v_uv;',
+            '  float ar = u_res.x / max(u_res.y, 1.0);',
+            '  vec2 p = (uv - 0.5) * vec2(ar, 1.0);',
+            '  vec2 m = (u_mouse - 0.5) * vec2(ar, 1.0);',
+            '  float t = u_time * 0.07;',
+            // domain warp
+            '  vec2 q = vec2(fbm(p*1.3 + t), fbm(p*1.3 + vec2(3.1, 1.7) + t));',
+            // cursor attractor — gentle pull on the flow
+            '  vec2 toM = m - p;',
+            '  float md = length(toM);',
+            '  vec2 attract = toM * exp(-md*2.4) * 0.32;',
+            '  vec2 warped = p + q*0.55 + attract;',
+            '  float n = fbm(warped*1.2 + t*1.6);',
+            // soft cursor glow
+            '  float glow = 0.45 / (1.0 + md*md*16.0);',
+            // palette
+            '  vec3 darkBase  = vec3(0.020, 0.060, 0.040);',
+            '  vec3 deepGreen = vec3(0.055, 0.361, 0.243);', // #0E5C3E
+            '  vec3 emerald   = vec3(0.086, 0.639, 0.290);', // #16A34A
+            '  vec3 amber     = vec3(0.961, 0.620, 0.043);', // #F59E0B
+            '  float k = smoothstep(-0.4, 0.55, n);',
+            '  vec3 col = mix(darkBase, deepGreen, k);',
+            '  float ridge = smoothstep(0.35, 0.78, n);',
+            '  col = mix(col, emerald*0.85, ridge*0.55);',
+            // cursor center: emerald halo then a whisper of amber at the core
+            '  col += emerald * glow * 0.7;',
+            '  col += amber * pow(glow, 2.2) * 0.55;',
+            // vignette + edge feather
+            '  float vig = smoothstep(1.25, 0.35, length(uv - 0.5));',
+            '  col *= vig;',
+            '  float fade = smoothstep(0.0, 0.12, uv.y) * smoothstep(1.0, 0.88, uv.y) *',
+            '               smoothstep(0.0, 0.08, uv.x) * smoothstep(1.0, 0.92, uv.x);',
+            '  gl_FragColor = vec4(col, fade * 0.9);',
+            '}'
+          ].join('\n');
+
+          const compile = (type, src) => {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+              console.warn('WebGL shader compile failed:', gl.getShaderInfoLog(s));
+              gl.deleteShader(s); return null;
+            }
+            return s;
+          };
+          const vs = compile(gl.VERTEX_SHADER, vsSrc);
+          const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+          if (!vs || !fs) return;
+          const prog = gl.createProgram();
+          gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+          gl.linkProgram(prog);
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            console.warn('WebGL link failed:', gl.getProgramInfoLog(prog)); return;
+          }
+          gl.useProgram(prog);
+
+          // Fullscreen quad
+          const buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+          const aPos = gl.getAttribLocation(prog, 'a_pos');
+          gl.enableVertexAttribArray(aPos);
+          gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+          const uRes = gl.getUniformLocation(prog, 'u_res');
+          const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+          const uTime = gl.getUniformLocation(prog, 'u_time');
+
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          gl.clearColor(0, 0, 0, 0);
+
+          // Resize tied to the showcase section
+          const dprCap = window.matchMedia('(max-width: 900px)').matches ? 1 : 1.5;
+          const resize = () => {
+            const rect = host.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+            const w = Math.max(1, Math.floor(rect.width * dpr));
+            const h = Math.max(1, Math.floor(rect.height * dpr));
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w; canvas.height = h;
+              gl.viewport(0, 0, w, h);
+            }
+          };
+          resize();
+          const ro = new ResizeObserver(resize);
+          ro.observe(host);
+
+          // Cursor tracking — eased toward target for that calm feel
+          const tgt = { x: 0.5, y: 0.45 };
+          const cur = { x: 0.5, y: 0.45 };
+          const onMove = (e) => {
+            const rect = host.getBoundingClientRect();
+            tgt.x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+            tgt.y = 1.0 - Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+          };
+          const onLeave = () => { tgt.x = 0.5; tgt.y = 0.45; };
+          host.addEventListener('mousemove', onMove, { passive: true });
+          host.addEventListener('mouseleave', onLeave, { passive: true });
+
+          // Pause rendering when offscreen — saves battery, keeps it calm
+          let visible = true;
+          const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: 0.05 });
+          io.observe(host);
+
+          let raf = 0;
+          const t0 = performance.now();
+          const tick = (now) => {
+            if (visible) {
+              // critically damped follow — soft, calming
+              cur.x += (tgt.x - cur.x) * 0.045;
+              cur.y += (tgt.y - cur.y) * 0.045;
+              gl.uniform2f(uRes, canvas.width, canvas.height);
+              gl.uniform2f(uMouse, cur.x, cur.y);
+              gl.uniform1f(uTime, (now - t0) / 1000);
+              gl.clear(gl.COLOR_BUFFER_BIT);
+              gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            }
+            raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
+
+          const onLost = (e) => { e.preventDefault(); cancelAnimationFrame(raf); };
+          canvas.addEventListener('webglcontextlost', onLost, false);
+
+          return () => {
+            cancelAnimationFrame(raf);
+            ro.disconnect(); io.disconnect();
+            host.removeEventListener('mousemove', onMove);
+            host.removeEventListener('mouseleave', onLeave);
+            canvas.removeEventListener('webglcontextlost', onLost);
+            try { gl.deleteBuffer(buf); gl.deleteProgram(prog); gl.deleteShader(vs); gl.deleteShader(fs); } catch(e) {}
+          };
+        }, []);
+        return (<div className="showcase-webgl" aria-hidden><canvas ref={canvasRef} /></div>);
+      });
+
+      /* ============ TOPOGRAPHIC BG ============ */
+      const TopoBg = memo(function TopoBg() {
+        return (
+          <div className="showcase-topo" aria-hidden>
+            <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+              <g fill="none" stroke="#16A34A" strokeWidth="0.5">
+                <path d="M -100 200 Q 300 100, 600 220 T 1200 180 T 1800 240" />
+                <path d="M -100 280 Q 300 180, 600 300 T 1200 260 T 1800 320" />
+                <path d="M -100 360 Q 300 260, 600 380 T 1200 340 T 1800 400" />
+                <path d="M -100 440 Q 300 340, 600 460 T 1200 420 T 1800 480" />
+                <path d="M -100 540 Q 300 440, 600 560 T 1200 520 T 1800 580" />
+                <path d="M -100 640 Q 300 540, 600 660 T 1200 620 T 1800 680" />
+                <path d="M -100 760 Q 300 660, 600 780 T 1200 740 T 1800 800" />
+              </g>
+              <g fill="none" stroke="#F0E6D2" strokeWidth="0.35" opacity="0.6">
+                <ellipse cx="800" cy="450" rx="650" ry="240" />
+                <ellipse cx="800" cy="450" rx="540" ry="200" />
+                <ellipse cx="800" cy="450" rx="430" ry="160" />
+                <ellipse cx="800" cy="450" rx="320" ry="120" />
+                <ellipse cx="800" cy="450" rx="220" ry="80" />
+              </g>
+            </svg>
+          </div>
+        );
+      });
+
+      /* ============ BAT/PADDLE SVGs (memoized, no reveal prop) ============ */
+      const CricketSvg = memo(function CricketSvg() {
+        return (
+          <svg viewBox="0 0 220 720" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bladeGradC" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#D9BD8C" />
+                <stop offset="50%" stopColor="#E8D2A4" />
+                <stop offset="100%" stopColor="#B89058" />
+              </linearGradient>
+              <linearGradient id="handleGradC" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0F0C08" />
+                <stop offset="50%" stopColor="#252019" />
+                <stop offset="100%" stopColor="#0F0C08" />
+              </linearGradient>
+              <linearGradient id="sensorGradC" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#16A34A" />
+                <stop offset="100%" stopColor="#0E5C3E" />
+              </linearGradient>
+            </defs>
+
+            <g className="layer layer-0">
+              <rect x="96" y="60" width="28" height="240" fill="url(#handleGradC)" rx="3" />
+              <path d="M 96 300 L 80 360 L 96 360 Z" fill="#3D2817" />
+              <path d="M 124 300 L 140 360 L 124 360 Z" fill="#3D2817" />
+              <rect x="96" y="300" width="28" height="60" fill="#1F1A14" />
+              <path d="M 64 360 L 156 360 L 156 670 Q 156 688 138 688 L 82 688 Q 64 688 64 670 Z" fill="url(#bladeGradC)" />
+              <path d="M 64 360 L 156 360 L 156 670 Q 156 688 138 688 L 82 688 Q 64 688 64 670 Z" fill="none" stroke="#7A5A30" strokeWidth="0.6" />
+              {Array.from({ length: 10 }).map((_, i) => (
+                <line key={i} x1={70 + i * 9} y1="370" x2={70 + i * 9} y2="680" stroke="#9C7642" strokeWidth="0.35" opacity="0.55" />
+              ))}
+              <rect x="104" y="360" width="14" height="320" fill="#F0DCB0" opacity="0.35" />
+              <ellipse cx="110" cy="510" rx="32" ry="48" fill="#FFEDC9" opacity="0.18" />
+            </g>
+
+            <g className="layer layer-1">
+              {Array.from({ length: 18 }).map((_, i) => (
+                <line key={i} x1="96" y1={74 + i * 12} x2="124" y2={74 + i * 12} stroke="#3A2E20" strokeWidth="0.7" opacity="0.95" />
+              ))}
+              <text x="110" y="430" textAnchor="middle" fill="#5C3D24" fontFamily="Bebas Neue, sans-serif" fontSize="12" letterSpacing="1.4" opacity="0.6">VOCAL WILLOW</text>
+              <line x1="86" y1="442" x2="134" y2="442" stroke="#5C3D24" strokeWidth="0.5" opacity="0.4" />
+            </g>
+
+            <g className="layer layer-2">
+              <circle cx="110" cy="160" r="4.5" fill="#FAF5E8" stroke="#16A34A" strokeWidth="1.2" />
+              <circle cx="110" cy="160" r="1.5" fill="#16A34A" />
+            </g>
+
+            <g className="layer layer-3">
+              <rect x="86" y="86" width="48" height="44" fill="#2A2620" rx="2" />
+              <rect x="86" y="86" width="48" height="6" fill="#16130E" />
+              <rect x="86" y="124" width="48" height="6" fill="#16130E" />
+              <line x1="92" y1="105" x2="128" y2="105" stroke="#3F362A" strokeWidth="0.6" />
+              <line x1="92" y1="115" x2="128" y2="115" stroke="#3F362A" strokeWidth="0.6" />
+            </g>
+
+            <g className="layer layer-4">
+              <rect x="78" y="56" width="64" height="40" rx="4" fill="url(#sensorGradC)" />
+              <rect x="78" y="56" width="64" height="40" rx="4" fill="none" stroke="#0E5C3E" strokeWidth="0.6" />
+              <circle cx="90" cy="68" r="2.3" fill="#FFE0A0" opacity="0.9" />
+              <rect x="100" y="65" width="34" height="2" fill="#FFE0A0" opacity="0.6" />
+              <rect x="100" y="70" width="26" height="1.5" fill="#FFE0A0" opacity="0.4" />
+              <text x="110" y="89" textAnchor="middle" fill="#FAF5E8" fontFamily="JetBrains Mono, monospace" fontSize="7" letterSpacing="0.5">FS · v1</text>
+            </g>
+
+            <g className="layer layer-5">
+              <line x1="110" y1="56" x2="110" y2="36" stroke="#0E5C3E" strokeWidth="1.6" />
+              <circle cx="110" cy="34" r="3.4" fill="#22C55E" />
+              <circle cx="110" cy="34" r="7" fill="none" stroke="#22C55E" strokeWidth="0.6" opacity="0.5" />
+              <circle cx="110" cy="34" r="10" fill="none" stroke="#22C55E" strokeWidth="0.4" opacity="0.25" />
+            </g>
+          </svg>
+        );
+      });
+
+      const PaddleballSvg = memo(function PaddleballSvg() {
+        return (
+          <svg viewBox="0 0 320 720" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="woodGradP" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#C9A26F" />
+                <stop offset="50%" stopColor="#E8D2A4" />
+                <stop offset="100%" stopColor="#A88450" />
+              </linearGradient>
+              <linearGradient id="handleGradP" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0F0C08" />
+                <stop offset="50%" stopColor="#252019" />
+                <stop offset="100%" stopColor="#0F0C08" />
+              </linearGradient>
+              <linearGradient id="sensorGradP" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#16A34A" />
+                <stop offset="100%" stopColor="#0E5C3E" />
+              </linearGradient>
+            </defs>
+
+            <g className="layer layer-0">
+              <rect x="146" y="60" width="28" height="200" fill="url(#handleGradP)" rx="3" />
+              <path d="M 146 260 L 110 290 L 210 290 L 174 260 Z" fill="#3D2817" />
+              <ellipse cx="160" cy="490" rx="120" ry="200" fill="url(#woodGradP)" stroke="#7A5A30" strokeWidth="0.6" />
+              {Array.from({ length: 16 }).map((_, i) => (
+                <line key={i} x1={50 + i * 14} y1="320" x2={50 + i * 14} y2="680" stroke="#9C7642" strokeWidth="0.4" opacity="0.4" />
+              ))}
+              <ellipse cx="160" cy="490" rx="58" ry="80" fill="#FFEDC9" opacity="0.22" />
+              <circle cx="280" cy="500" r="14" fill="#FAF5E8" stroke="#7A5A30" strokeWidth="0.7" />
+              <path d="M 268 500 Q 280 488, 292 500" fill="none" stroke="#7A5A30" strokeWidth="0.5" />
+              <circle cx="280" cy="500" r="2" fill="#7A5A30" />
+            </g>
+
+            <g className="layer layer-1">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <line key={i} x1="146" y1={76 + i * 12} x2="174" y2={76 + i * 12} stroke="#3A2E20" strokeWidth="0.7" opacity="0.95" />
+              ))}
+              <text x="160" y="480" textAnchor="middle" fill="#5C3D24" fontFamily="Bebas Neue, sans-serif" fontSize="12" letterSpacing="1.4" opacity="0.55">VOCAL WILLOW</text>
+            </g>
+
+            <g className="layer layer-2">
+              <circle cx="160" cy="160" r="4.5" fill="#FAF5E8" stroke="#16A34A" strokeWidth="1.2" />
+              <circle cx="160" cy="160" r="1.5" fill="#16A34A" />
+            </g>
+
+            <g className="layer layer-3">
+              <rect x="136" y="86" width="48" height="44" fill="#2A2620" rx="2" />
+              <rect x="136" y="86" width="48" height="6" fill="#16130E" />
+              <rect x="136" y="124" width="48" height="6" fill="#16130E" />
+              <line x1="142" y1="105" x2="178" y2="105" stroke="#3F362A" strokeWidth="0.6" />
+              <line x1="142" y1="115" x2="178" y2="115" stroke="#3F362A" strokeWidth="0.6" />
+            </g>
+
+            <g className="layer layer-4">
+              <rect x="128" y="56" width="64" height="40" rx="4" fill="url(#sensorGradP)" />
+              <rect x="128" y="56" width="64" height="40" rx="4" fill="none" stroke="#0E5C3E" strokeWidth="0.6" />
+              <circle cx="140" cy="68" r="2.3" fill="#FFE0A0" opacity="0.9" />
+              <rect x="150" y="65" width="34" height="2" fill="#FFE0A0" opacity="0.6" />
+              <rect x="150" y="70" width="26" height="1.5" fill="#FFE0A0" opacity="0.4" />
+              <text x="160" y="89" textAnchor="middle" fill="#FAF5E8" fontFamily="JetBrains Mono, monospace" fontSize="7" letterSpacing="0.5">FS · v1</text>
+            </g>
+
+            <g className="layer layer-5">
+              <line x1="160" y1="56" x2="160" y2="36" stroke="#0E5C3E" strokeWidth="1.6" />
+              <circle cx="160" cy="34" r="3.4" fill="#22C55E" />
+              <circle cx="160" cy="34" r="7" fill="none" stroke="#22C55E" strokeWidth="0.6" opacity="0.5" />
+              <circle cx="160" cy="34" r="10" fill="none" stroke="#22C55E" strokeWidth="0.4" opacity="0.25" />
+            </g>
+          </svg>
+        );
+      });
+
+      const PickleballSvg = memo(function PickleballSvg() {
+        return (
+          <svg viewBox="0 0 320 720" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="compositeGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#3a3a40" />
+                <stop offset="50%" stopColor="#62626c" />
+                <stop offset="100%" stopColor="#2a2a30" />
+              </linearGradient>
+              <linearGradient id="handleGradPk" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0F0C08" />
+                <stop offset="50%" stopColor="#252019" />
+                <stop offset="100%" stopColor="#0F0C08" />
+              </linearGradient>
+              <linearGradient id="sensorGradPk" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#16A34A" />
+                <stop offset="100%" stopColor="#0E5C3E" />
+              </linearGradient>
+              <radialGradient id="pkGlow" cx="0.5" cy="0.5">
+                <stop offset="0%" stopColor="#FAF5E8" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#FAF5E8" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+
+            <g className="layer layer-0">
+              {/* subtle back-glow so the dark paddle is visible on dark stage */}
+              <ellipse cx="160" cy="470" rx="160" ry="220" fill="url(#pkGlow)" />
+              <rect x="146" y="60" width="28" height="170" fill="url(#handleGradPk)" rx="3" />
+              <path d="M 146 230 L 120 250 L 200 250 L 174 230 Z" fill="#2A2620" />
+              <path d="M 70 270 Q 70 250, 90 250 L 230 250 Q 250 250, 250 270 L 250 600 Q 250 690, 160 690 Q 70 690, 70 600 Z" fill="url(#compositeGrad)" stroke="#FAF5E8" strokeWidth="0.5" strokeOpacity="0.18" />
+              {Array.from({ length: 16 }).map((_, row) =>
+                Array.from({ length: 11 }).map((_, col) => {
+                  const x = 88 + col * 14;
+                  const y = 290 + row * 22;
+                  if ((x - 160) * (x - 160) / 6400 + (y - 470) * (y - 470) / 36100 > 1) return null;
+                  return <circle key={`${row}-${col}`} cx={x} cy={y} r="1.4" fill="#16131a" opacity="0.55" />;
+                })
+              )}
+              <ellipse cx="160" cy="470" rx="54" ry="76" fill="#FAF5E8" opacity="0.07" />
+              <circle cx="285" cy="500" r="14" fill="#FAF5E8" stroke="#7A5A30" strokeWidth="0.4" />
+              {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+                const angle = (i * Math.PI) / 4;
+                const cx = 285 + Math.cos(angle) * 7;
+                const cy = 500 + Math.sin(angle) * 7;
+                return <circle key={i} cx={cx} cy={cy} r="1.3" fill="#7A5A30" opacity="0.7" />;
+              })}
+            </g>
+
+            <g className="layer layer-1">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <line key={i} x1="146" y1={76 + i * 12} x2="174" y2={76 + i * 12} stroke="#3A2E20" strokeWidth="0.7" opacity="0.95" />
+              ))}
+              <text x="160" y="430" textAnchor="middle" fill="#FAF5E8" fontFamily="Bebas Neue, sans-serif" fontSize="12" letterSpacing="1.4" opacity="0.55">VOCAL WILLOW</text>
+              <line x1="135" y1="442" x2="185" y2="442" stroke="#FAF5E8" strokeWidth="0.5" opacity="0.3" />
+            </g>
+
+            <g className="layer layer-2">
+              <circle cx="160" cy="160" r="4.5" fill="#FAF5E8" stroke="#16A34A" strokeWidth="1.2" />
+              <circle cx="160" cy="160" r="1.5" fill="#16A34A" />
+            </g>
+
+            <g className="layer layer-3">
+              <rect x="136" y="86" width="48" height="44" fill="#2A2620" rx="2" />
+              <rect x="136" y="86" width="48" height="6" fill="#16130E" />
+              <rect x="136" y="124" width="48" height="6" fill="#16130E" />
+              <line x1="142" y1="105" x2="178" y2="105" stroke="#3F362A" strokeWidth="0.6" />
+              <line x1="142" y1="115" x2="178" y2="115" stroke="#3F362A" strokeWidth="0.6" />
+            </g>
+
+            <g className="layer layer-4">
+              <rect x="128" y="56" width="64" height="40" rx="4" fill="url(#sensorGradPk)" />
+              <rect x="128" y="56" width="64" height="40" rx="4" fill="none" stroke="#0E5C3E" strokeWidth="0.6" />
+              <circle cx="140" cy="68" r="2.3" fill="#FFE0A0" opacity="0.9" />
+              <rect x="150" y="65" width="34" height="2" fill="#FFE0A0" opacity="0.6" />
+              <rect x="150" y="70" width="26" height="1.5" fill="#FFE0A0" opacity="0.4" />
+              <text x="160" y="89" textAnchor="middle" fill="#FAF5E8" fontFamily="JetBrains Mono, monospace" fontSize="7" letterSpacing="0.5">FS · v1</text>
+            </g>
+
+            <g className="layer layer-5">
+              <line x1="160" y1="56" x2="160" y2="36" stroke="#0E5C3E" strokeWidth="1.6" />
+              <circle cx="160" cy="34" r="3.4" fill="#22C55E" />
+              <circle cx="160" cy="34" r="7" fill="none" stroke="#22C55E" strokeWidth="0.6" opacity="0.5" />
+              <circle cx="160" cy="34" r="10" fill="none" stroke="#22C55E" strokeWidth="0.4" opacity="0.25" />
+            </g>
+          </svg>
+        );
+      });
+
+      function MiniIcon({ type, dark }) {
+        const stroke = dark ? '#F0E6D2' : '#141414';
+        const s = { stroke, strokeWidth: 1.4, fill: 'none' };
+        if (type === 'cricket') {
+          return (
+            <svg viewBox="0 0 60 60" width="60" height="60">
+              <rect x="27" y="6" width="6" height="22" {...s} />
+              <path d="M 22 30 L 38 30 L 38 54 Q 38 56, 36 56 L 24 56 Q 22 56, 22 54 Z" {...s} />
+            </svg>
+          );
+        }
+        if (type === 'paddleball') {
+          return (
+            <svg viewBox="0 0 60 60" width="60" height="60">
+              <rect x="27" y="4" width="6" height="16" {...s} />
+              <ellipse cx="30" cy="38" rx="18" ry="22" {...s} />
+            </svg>
+          );
+        }
+        return (
+          <svg viewBox="0 0 60 60" width="60" height="60">
+            <rect x="27" y="4" width="6" height="14" {...s} />
+            <path d="M 12 22 L 48 22 L 48 48 Q 48 56, 30 56 Q 12 56, 12 48 Z" {...s} />
+          </svg>
+        );
+      }
+
+      /* ============ THE CINEMATIC SHOWCASE ============ */
+      function Showcase() {
+        const { sport, sportIdx, setSportIdx } = useSport();
+        const [reveal, setReveal] = useState(5);
+        const [hovering, setHovering] = useState(false);
+        const [fading, setFading] = useState(false);
+        const stageRef = useRef(null);
+        const rafRef = useRef(0);
+        const lastReveal = useRef(5);
+
+        // Throttled, rAF-batched, no re-render storm
+        const handleMove = useCallback((e) => {
+          if (rafRef.current) return;
+          const clientY = e.clientY;
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = 0;
+            const node = stageRef.current;
+            if (!node) return;
+            const rect = node.getBoundingClientRect();
+            const y = (clientY - rect.top) / rect.height;
+            const level = Math.max(0, Math.min(5, Math.round((1 - y) * 5)));
+            if (level !== lastReveal.current) {
+              lastReveal.current = level;
+              setReveal(level);
+            }
+          });
+        }, []);
+
+        const handleLeave = useCallback(() => {
+          setHovering(false);
+          lastReveal.current = 5;
+          setReveal(5);
+        }, []);
+        const handleEnter = useCallback(() => setHovering(true), []);
+
+        const switchSport = useCallback((dir) => {
+          setFading(true);
+          setTimeout(() => {
+            setSportIdx((prev) => (prev + dir + SPORTS.length) % SPORTS.length);
+            setFading(false);
+          }, 200);
+        }, [setSportIdx]);
+
+        const setSportSmooth = useCallback((idx) => {
+          if (idx === sportIdx) return;
+          setFading(true);
+          setTimeout(() => {
+            setSportIdx(idx);
+            setFading(false);
+          }, 200);
+        }, [sportIdx, setSportIdx]);
+
+        const currentReveal = hovering ? reveal : 5;
+        const nextSport = SPORTS[(sportIdx + 1) % SPORTS.length];
+
+        const SvgComp = sport.id === 'cricket' ? CricketSvg : sport.id === 'paddleball' ? PaddleballSvg : PickleballSvg;
+
+        const annoYs = [88, 75, 56, 38, 22, 8];
+        const annos = [
+          { title: `Bare ${sport.unit.toLowerCase()}`, desc: `Standard equipment for ${sport.full.toLowerCase()}.` },
+          { title: 'Grip wrap', desc: 'Standard rubber + branded mark.' },
+          { title: 'Tactile marker', desc: 'Raised dot · orientable by feel.' },
+          { title: 'Sensor strap', desc: 'Velcro + foam · field-swappable.' },
+          { title: 'Sensor module', desc: 'ESP32 + MPU6050 · 247 Hz · 14 g.' },
+          { title: 'Antenna · LED', desc: 'BLE 4.2 · status light · sync cap.' },
+        ];
+
+        return (
+          <section id="showcase" className="showcase">
+            <ShowcaseWebGL />
+            <TopoBg />
+
+            <div className="showcase-mark">F<span className="accent">·</span>S</div>
+
+            <div className="showcase-hint">
+              <span className="pulse"></span>
+              MOVE CURSOR UP TO BUILD · DOWN TO STRIP
+            </div>
+
+            <div className="showcase-tag">
+              VOCAL WILLOW / SENSOR PLATFORM / {sport.short.toUpperCase()}
+            </div>
+
+            <div
+              className="showcase-stage"
+              ref={stageRef}
+              data-reveal={currentReveal}
+              onMouseMove={handleMove}
+              onMouseEnter={handleEnter}
+              onMouseLeave={handleLeave}
+            >
+              <div className={`bat-canvas bat-fade ${fading ? 'fading' : ''}`} style={{ position: 'relative' }}>
+                {annos.map((a, i) => (
+                  <div
+                    key={i}
+                    className={`anno anno-${i}`}
+                    style={{
+                      top: `${annoYs[i]}%`,
+                      left: i % 2 === 0 ? 'calc(100% + 30px)' : 'auto',
+                      right: i % 2 === 1 ? 'calc(100% + 30px)' : 'auto',
+                      textAlign: i % 2 === 1 ? 'right' : 'left',
+                      transitionDelay: `${i * 0.04}s`,
+                    }}
+                  >
+                    <span className="anno-line" style={{ width: 36 + i * 14 }}></span>
+                    <div className="anno-title">{a.title}</div>
+                    <div className="anno-desc">{a.desc}</div>
+                  </div>
+                ))}
+                <SvgComp />
+              </div>
+            </div>
+
+            <div className="reveal-meter" data-level={currentReveal}>
+              <div className="reveal-meter-fill" style={{ height: `${(currentReveal / 5) * 100}%` }}></div>
+            </div>
+
+            <div className="showcase-sport-card">
+              <div className="ssc-label">NEXT SPORT</div>
+              <div className="ssc-icon"><MiniIcon type={nextSport.id} dark /></div>
+              <div className="ssc-name">{nextSport.short.toUpperCase()}</div>
+              <div className="ssc-meta">{nextSport.full}</div>
+            </div>
+
+            <div className="showcase-arrows">
+              <button onClick={() => switchSport(-1)} aria-label="Previous sport">‹</button>
+              <div className="sport-dots">
+                {SPORTS.map((s, i) => (
+                  <span
+                    key={s.id}
+                    className={`sport-dot ${i === sportIdx ? 'active' : ''}`}
+                    onClick={() => setSportSmooth(i)}
+                  ></span>
+                ))}
+              </div>
+              <button onClick={() => switchSport(1)} aria-label="Next sport">›</button>
+            </div>
+
+            <div className="showcase-bottom">
+              <div className="v">v1<span className="accent">.0</span></div>
+              <div>VOCAL WILLOW · {sport.short.toUpperCase()}</div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ THREE SPORTS ============ */
+      function ThreeSports() {
+        const { sportIdx, setSportIdx } = useSport();
+        const ref = useReveal();
+        const cards = [
+          { id: 'cricket', n: '01', name: 'Blind Cricket', sub: 'Originating sport · Heavy bat', body: 'Deliberate willow swings against an audible ball. Detect hits, misses, shot type, distance bracket. Independent net practice.', meta: ['Mass · ~1.2 kg', 'Shot rate · 1–2 / min', 'Trigger · 2.5 rad/s'] },
+          { id: 'paddleball', n: '02', name: 'Blind Paddleball', sub: 'Wall · Solo · Rapid', body: 'Lighter paddle, faster swings, wall rebounds. Streak counter announces "Three! Five!" mid-rally. Solo or paired play.', meta: ['Mass · ~200 g', 'Shot rate · 10–30 / min', 'Trigger · 1.8 rad/s'] },
+          { id: 'pickleball', n: '03', name: 'Blind Pickleball', sub: 'Court · Finesse · Paralympic', body: 'Composite paddle, slower play, touch over power. Distinguishes dinks from drives, court hits from net taps.', meta: ['Mass · ~150 g', 'Shot rate · variable', 'Trigger · 1.5 rad/s'] },
+          ];
+        return (
+          <section id="sports" className="section" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">02 / Platform</span>
+                <span>Three sports, one solution</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                One sensor. <span className="serif-i">Three sports.</span>
+              </h2>
+              <p className="lead reveal d2">
+                Same hardware. Same app. Different sport mode. Click a card to set the active sport
+                across the site — the showcase, the demo, the specs, the testimonials all switch.
+              </p>
+
+              <div className="three-grid">
+                {cards.map((c, i) => (
+                  <div
+                    key={c.id}
+                    className={`three-cell ${i === sportIdx ? 'active' : ''}`}
+                    onClick={() => setSportIdx(i)}
+                  >
+                    <div className="three-num">{c.n}</div>
+                    <div className="three-icon-bg"><MiniIcon type={c.id} /></div>
+                    <h4>{c.name}</h4>
+                    <div className="three-sub">{c.sub}</div>
+                    <p>{c.body}</p>
+                    <div className="three-meta">
+                      {c.meta.map((m) => <div key={m}>{m}</div>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ MVP CAPABILITIES ============ */
+      function MVP() {
+        const { sport } = useSport();
+        const ref = useReveal();
+        return (
+          <section id="mvp" className="section" ref={ref} style={{ background: 'var(--bg-2)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">03 / Capabilities</span>
+                <span>What ships in v1 · {sport.short}</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Six capabilities. <br/>
+                <span className="serif-i">One honest tool.</span>
+              </h2>
+              <p className="lead reveal d2">
+                Every claim below is something we commit to demonstrate live, on {sport.short.toLowerCase()}.
+                No vapor, no &quot;coming soon&quot; asterisks in the demo.
+              </p>
+
+              <div className="mvp-grid">
+                {sport.mvp.map((c) => (
+                  <div key={c.n} className="mvp-card">
+                    <div className="icon-block">{c.icon}</div>
+                    <h4>{c.title}</h4>
+                    <p>{c.body}</p>
+                    <div className="marker">{c.n} / 06</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ HOW IT WORKS ============ */
+      function HowItWorks() {
+        const { sport } = useSport();
+        const ref = useReveal();
+        return (
+          <section id="how" className="section" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">04 / Engineering</span>
+                <span>How it works · {sport.short}</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Read the <span className="accent">spike</span>. <br/>
+                <span className="serif-i">Reject the noise.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2">
+                ESP32 + MPU6050, sampling at 247 Hz. Rule-based detection — no ML black-box,
+                no juror-trap. Thresholds tuned for {sport.short.toLowerCase()}.
+              </p>
+
+              <div className="how-flow">
+                {sport.how.map((f) => (
+                  <div key={f.n} className="how-step">
+                    <div className="num">{f.n}</div>
+                    <h5>{f.title}</h5>
+                    <p>{f.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ TUNING TABLE ============ */
+      function TuningTable() {
+        const { sport } = useSport();
+        const ref = useReveal();
+        return (
+          <section className="section tune-wrap" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">05 / Tuning</span>
+                <span>Sport-specific parameters · {sport.short}</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Same hardware. <span className="serif-i">Different math.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2">
+                The sensor doesn't change. The thresholds do. Each sport has its own profile,
+                selected at session start — never mid-rally.
+              </p>
+
+              <div className="tune-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sport.tune.map(([k, v]) => (
+                      <tr key={k}>
+                        <td className="col-name">{k}</td>
+                        <td className="col-val">{v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ TIMELINE ============ */
+      function Plan() {
+        const ref = useReveal();
+        const weeks = [
+          { wk: 'WK 1', title: 'Foundations + labelled data', body: 'Buy parts. Agree Bluetooth event format. Collect 200+ labelled swings across all three sports — cricket shots, paddleball rallies, pickleball dinks. Outreach to associations and schools.' },
+          { wk: 'WK 2', title: 'Detection + per-sport tuning', body: 'Tune hit/miss thresholds for each sport. Build the shot classifier (cricket) and rally counter (paddleball). Calibrate distance brackets. First end-to-end run.' },
+          { wk: 'WK 3', title: 'Languages + field tests', body: 'Record + integrate English, Hindi, Tamil, Bengali, Marathi. Full TalkBack pass. Field-test with real blind players in each sport. Capture consented video and quotes.' },
+          { wk: 'WK 4', title: 'Harden + pitch', body: 'Kill false triggers. Lock demo flow per sport. Compute accuracy metrics. Build deck. Rehearse jury Q&A.' },
+          { wk: 'D 29–30', title: 'Buffer', body: 'Contingency, final rehearsal, charge and pack everything, test backups.' },
+        ];
+        return (
+          <section id="plan" className="section" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">06 / Timeline</span>
+                <span>30-day build</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Four weeks. <span className="serif-i">Three sports tested.</span>
+              </h2>
+
+              <div className="timeline">
+                {weeks.map((w, i) => (
+                  <div key={w.wk} className={`tl-row ${i === 0 ? 'active' : ''}`}>
+                    <div className="tl-week">{w.wk}</div>
+                    <div>
+                      <h4 className="tl-title">{w.title}</h4>
+                      <p className="tl-body">{w.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ STATS ============ */
+      function Stats() {
+        const ref = useReveal();
+        return (
+          <section className="stats" ref={ref}>
+            <div className="container stats-heading reveal">
+              <h3>The numbers that matter.</h3>
+            </div>
+            <div className="container">
+              <div className="stat-grid">
+                <div className="stat-cell"><div className="stat-num">3</div><div className="stat-label">Sports supported<br/>at v1 launch</div></div>
+                <div className="stat-cell"><div className="stat-num">5</div><div className="stat-label">Indian languages<br/>spoken on device</div></div>
+                <div className="stat-cell"><div className="stat-num">&lt;200<span style={{fontSize:'0.5em'}}>ms</span></div><div className="stat-label">Feedback latency<br/>across all sports</div></div>
+                <div className="stat-cell"><div className="stat-num">₹1.5<span style={{fontSize:'0.5em'}}>K</span></div><div className="stat-label">Bill of materials<br/>per device</div></div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ DEMO ============ */
+      function Demo() {
+        const { sport } = useSport();
+        const ref = useReveal();
+        const [events, setEvents] = useState([]);
+
+        useEffect(() => {
+          setEvents([sport.demo[0]]);
+          let i = 1;
+          const id = setInterval(() => {
+            setEvents((prev) => {
+              if (prev.length >= sport.demo.length) return [sport.demo[0]];
+              return [...prev, sport.demo[i % sport.demo.length]];
+            });
+            i++;
+          }, 1500);
+          return () => clearInterval(id);
+        }, [sport.id]);
+
+        const hits = events.filter((e) => e.verdict === 'HIT').length;
+        const total = events.length;
+        const pct = total > 0 ? Math.round((hits / total) * 100) : 0;
+
+        return (
+          <section id="demo" className="section demo" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">07 / Hero moment</span>
+                <span>The live demo · {sport.short}</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Three minutes. <br/>
+                <span className="serif-i">One unforgettable swing.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2" style={{ maxWidth: 820 }}>
+                A blind {sport.short.toLowerCase()} player plays live. The room hears the verdict
+                instantly. No one is telling them. The {sport.unit.toLowerCase()} is.
+              </p>
+
+              <div className="demo-stage">
+                <div className="demo-header">
+                  <span>SESSION · {sport.unit}_01</span>
+                  <span className="red">● CONNECTED</span>
+                  <span>247 Hz</span>
+                  <span>LANG · हिंदी</span>
+                  <span>MODE · {sport.short.toUpperCase()}</span>
+                  <span>{hits}/{total} HIT · {pct}%</span>
+                </div>
+                {events.map((e, i) => (
+                  <div key={`${e.ts}-${i}`} className="demo-event">
+                    <span className="ts">{e.ts}</span>
+                    <span className={`verdict ${e.verdict === 'HIT' ? 'hit' : 'miss'}`}>{e.verdict}</span>
+                    <span className="shot">{e.shot}</span>
+                    <span className="dist">{e.dist}</span>
+                  </div>
+                ))}
+                <div className="demo-summary">
+                  &quot;{sport.summary(hits, total, pct)}&quot;
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ TEAM ============ */
+      const TEAM = [
+        {
+          mono: 'SP',
+          role: 'Person 01',
+          name: 'Siddak Puri',
+          institution: 'Manav Mangal SMART WORLD',
+          lane: 'App · Audio · Accessibility',
+          bio: 'Web Dev / UI&middot;UX / Robotics. 16-year-old builder turning complex problems into clean, functional designs. When not coding, watching football.',
+          placeholder: false,
+        },
+        {
+          mono: 'RK',
+          role: 'Person 02',
+          name: 'Rishu Kamboj',
+          institution: 'Manav Mangal SMART SCHOOL',
+          lane: 'Hardware · Firmware',
+          bio: 'Bio to be added — owns the signal end-to-end: ESP32, IMU, wiring, mounting, detection algorithm, Bluetooth.',
+          placeholder: true,
+        },
+        {
+          mono: 'KK',
+          role: 'Person 03',
+          name: 'Karan Kamboj',
+          institution: 'PGGC Sec-11, Chandigarh — Pass-out',
+          lane: 'Validation · Story · Pitch',
+          bio: 'Bio to be added — owns the proof and the pitch: user research with blind athletes and coaches, field testing, ground-truth data, metrics, demo design, video, deck.',
+          placeholder: true,
+        },
+      ];
+
+      function Team() {
+        const ref = useReveal();
+        return (
+          <section id="team" className="section" ref={ref} style={{ borderTop: '1px solid var(--line)' }}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">08 / Team</span>
+                <span>Three people, three lanes</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Built by <span className="accent">three</span>. <br/>
+                <span className="serif-i">Tested by many.</span>
+              </h2>
+
+              <div className="team-grid">
+                {TEAM.map((t, i) => (
+                  <div key={t.name} className="team-cell">
+                    <div className="badge">0{i + 1}</div>
+                    <div className="team-mono">{t.mono}</div>
+                    <div className="role">{t.role}</div>
+                    <h5>{t.name}</h5>
+                    <div className="institution">{t.institution}</div>
+                    <div className="lane">{t.lane}</div>
+                    <p className={t.placeholder ? 'placeholder' : ''} dangerouslySetInnerHTML={{ __html: t.bio }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ TESTIMONIALS ============ */
+      function Testimonials() {
+        const { sport } = useSport();
+        const ref = useReveal();
+        return (
+          <section id="users" className="section" ref={ref} style={{ background: 'var(--bg-2)', borderTop: '1px solid var(--line)' }}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">09 / Voices</span>
+                <span>Real players · {sport.short}</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                Voices from <span className="serif-i">the pilot.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2">
+                Paraphrased quotes from pilot sessions — names withheld pending consent for public
+                release. Switch sport above to read from each community.
+              </p>
+
+              <div className="test-grid">
+                {sport.testimonials.map((t, i) => (
+                  <div key={i} className="test-card">
+                    <div className="quote-mark">&ldquo;</div>
+                    <div className="test-body">{t.body}</div>
+                    <div className="test-meta">
+                      <div className="test-name">{t.name}</div>
+                      <div className="test-where">{t.where}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ ROADMAP ============ */
+      function Roadmap() {
+        const ref = useReveal();
+        const phases = [
+          { p: 'PHASE 1', name: 'MVP · Now', items: ['Hit/miss across 3 sports', 'Sport-mode app selector', 'Session tracking + spoken feedback', 'Tested with real blind players'] },
+          { p: 'PHASE 2', name: 'v1.1 · Pilot scale', items: ['Multi-language expansion (Tamil, Telugu, Kannada)', 'Cricket: cue-based timing', 'Paddleball: rally badges', 'Pickleball: court strategy', '10+ blind schools deployed'] },
+          { p: 'PHASE 3', name: 'v2.0 · Platform', items: ['New sports: badminton, para-TT', 'Coach dashboard with progress', 'Cricket: full ball-relative timing', 'Khelo India partnership'] },
+          { p: 'PHASE 4', name: 'v3.0 · Reach', items: ['Rehab mode (physio + stroke recovery)', 'Para-sport academy integration', 'World Blind Sports Council partnership', 'Open API for associations'] },
+        ];
+        return (
+          <section id="roadmap" className="section" ref={ref}>
+            <div className="container">
+              <div className="section-label reveal">
+                <span className="num">10 / Roadmap</span>
+                <span>The arc forward</span>
+              </div>
+              <h2 className="section-h display reveal d1">
+                From MVP <span className="serif-i">to platform.</span>
+              </h2>
+              <p className="lead lead-dim reveal d2">
+                Same architecture, expanding outward. Each phase ships only what the previous phase has earned.
+              </p>
+
+              <div className="roadmap">
+                {phases.map((ph) => (
+                  <div key={ph.p} className="roadmap-cell">
+                    <div className="phase">{ph.p}</div>
+                    <h6>{ph.name}</h6>
+                    <ul>
+                      {ph.items.map((it) => <li key={it}>{it}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ CLOSING ============ */
+      function Closing() {
+        const ref = useReveal();
+        return (
+          <section id="closing" className="closing" ref={ref}>
+            <div className="closing-bg"></div>
+            <div className="container">
+              <div className="section-label reveal" style={{ justifyContent: 'center', display: 'flex' }}>
+                <span className="num">11 / Closing</span>
+              </div>
+              <h2 className="closing-h reveal d1">
+                Every blind athlete <br/>
+                deserves to <span className="serif-i">practice</span> <br/>
+                on their own <span className="accent">terms</span>.
+              </h2>
+              <div className="closing-cta reveal d3">
+                <a className="btn btn-primary" onClick={() => document.getElementById('showcase')?.scrollIntoView({ behavior: 'smooth' })}>Explore the sensor →</a>
+                <a className="btn btn-ghost" onClick={() => document.getElementById('team')?.scrollIntoView({ behavior: 'smooth' })}>Meet the team</a>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function Footer() {
+        return (
+          <footer>
+            <div className="container">
+              <div className="row">
+                <div className="brand">VOCAL WILLOW</div>
+                <div>Independent training feedback for blind athletes. Cricket. Paddleball. Pickleball.</div>
+                <div>© 2026 · Built in India</div>
+              </div>
+            </div>
+          </footer>
+        );
+      }
+
+      /* ============ APP ============ */
+      function App() {
+        const [sportIdx, setSportIdx] = useState(0);
+        const sport = SPORTS[sportIdx];
+        const value = useMemo(() => ({ sport, sportIdx, setSportIdx }), [sport, sportIdx]);
+        return (
+          <SportContext.Provider value={value}>
+            <Loader />
+            <Nav />
+            <Hero />
+            <Ticker />
+            <Manifesto />
+            <Showcase />
+            <ThreeSports />
+            <MVP />
+            <HowItWorks />
+            <TuningTable />
+            <Plan />
+            <Stats />
+            <Demo />
+            <Team />
+            <Testimonials />
+            <Roadmap />
+            <Closing />
+            <Footer />
+          </SportContext.Provider>
+        );
+      }
+
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
