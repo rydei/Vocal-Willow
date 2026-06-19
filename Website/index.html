@@ -487,8 +487,8 @@
 
       .showcase-tag {
         position: absolute;
-        top: 50%;
-        right: 28px;
+        top: 74%;
+        right: 58px;
         transform: translateY(-50%) rotate(90deg);
         transform-origin: center right;
         font-family: 'JetBrains Mono', monospace;
@@ -753,7 +753,7 @@
         box-shadow: 0 0 10px var(--accent);
       }
       .reveal-meter::before {
-        content: 'STACK';
+        content: '';
         position: absolute;
         top: -20px;
         left: -10px;
@@ -1733,7 +1733,6 @@
 
             <div className="hero-scroll">
               <span>Scroll · Currently viewing: {sport.short}</span>
-              <span className="hero-scroll-line"></span>
             </div>
           </section>
         );
@@ -2343,7 +2342,7 @@
             <ShowcaseWebGL />
             <TopoBg />
 
-            <div className="showcase-mark">F<span className="accent">·</span>S</div>
+            <div className="showcase-mark">V<span className="accent">·</span>W</div>
 
             <div className="showcase-hint">
               <span className="pulse"></span>
@@ -2410,7 +2409,7 @@
             </div>
 
             <div className="showcase-bottom">
-              <div className="v">v1<span className="accent">.0</span></div>
+              <div className="v">v2<span className="accent">.0</span></div>
               <div>VOCAL WILLOW · {sport.short.toUpperCase()}</div>
             </div>
           </section>
@@ -2527,6 +2526,30 @@
                     <p>{f.body}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* ============ FOR EVERYONE ============ */
+      function ForEveryone() {
+        return (
+          <section style={{ padding: '6rem 0', backgroundColor: '#F1F0EC', borderTop: '1px solid #D9D7D0', borderBottom: '1px solid #D9D7D0' }}>
+            <div className="container">
+              <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'JetBrains Mono', color: '#16A34A', fontWeight: '700', letterSpacing: '0.05em', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                  THE CURB CUT EFFECT
+                </div>
+                <h2 style={{ fontFamily: 'Bebas Neue', fontSize: '3.5rem', color: '#0E5C3E', lineHeight: '1.1', marginBottom: '1.5rem' }}>
+                  NOT JUST FOR THE VISUALLY IMPAIRED.
+                </h2>
+                <p style={{ fontFamily: 'Inter', fontSize: '1.125rem', color: '#1A1A1A', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+                  While Vocal Willow was engineered from the ground up to give blind athletes independence, its sub-millisecond IMU detection makes it a powerful training instrument for <b>all athletes</b>.
+                </p>
+                <p style={{ fontFamily: 'Inter', fontSize: '1.125rem', color: '#6B7280', lineHeight: '1.6' }}>
+                  Sighted players use Vocal Willow to refine swing mechanics, track impact consistency, and build muscle memory. Because the feedback is strictly audio and haptic, you never have to break your stance to look at a screen. Keep your eyes on the ball, and let the bat tell you how you hit.
+                </p>
               </div>
             </div>
           </section>
@@ -2714,7 +2737,7 @@
           name: 'Rishu Kamboj',
           institution: 'Manav Mangal SMART SCHOOL',
           lane: 'Hardware · Firmware',
-          bio: 'Bio to be added — owns the signal end-to-end: ESP32, IMU, wiring, mounting, detection algorithm, Bluetooth.',
+          bio: 'Hardware & Robotics: Built and tested the physical robot components and stepped in to fix software bugs to keep the project running smoothly.',
           placeholder: true,
         },
         {
@@ -2723,7 +2746,7 @@
           name: 'Karan Kamboj',
           institution: 'PGGC Sec-11, Chandigarh — Pass-out',
           lane: 'Validation · Story · Pitch',
-          bio: 'Bio to be added — owns the proof and the pitch: user research with blind athletes and coaches, field testing, ground-truth data, metrics, demo design, video, deck.',
+          bio: 'Visionary Project Lead: Kept the team organized, shaped our creative visuals, and ran our socials—all while driving the project forward with big ideas and a strong vision.',
           placeholder: true,
         },
       ];
@@ -2800,10 +2823,10 @@
       function Roadmap() {
         const ref = useReveal();
         const phases = [
-          { p: 'PHASE 1', name: 'MVP · Now', items: ['Hit/miss across 3 sports', 'Sport-mode app selector', 'Session tracking + spoken feedback', 'Tested with real blind players'] },
-          { p: 'PHASE 2', name: 'v1.1 · Pilot scale', items: ['Multi-language expansion (Tamil, Telugu, Kannada)', 'Cricket: cue-based timing', 'Paddleball: rally badges', 'Pickleball: court strategy', '10+ blind schools deployed'] },
-          { p: 'PHASE 3', name: 'v2.0 · Platform', items: ['New sports: badminton, para-TT', 'Coach dashboard with progress', 'Cricket: full ball-relative timing', 'Khelo India partnership'] },
-          { p: 'PHASE 4', name: 'v3.0 · Reach', items: ['Rehab mode (physio + stroke recovery)', 'Para-sport academy integration', 'World Blind Sports Council partnership', 'Open API for associations'] },
+          { p: 'PRESENT TIME (PHASE-2)', name: 'Current Features', items: ['Hit/miss in cricket', 'Sport-mode app selector', 'Session tracking + spoken feedback'] },
+          { p: 'PHASE 2', name: 'v1.0 · Initial Prototype', items: ['Multi-language expansion (Tamil, Telugu, Kannada)', 'Cricket: cue-based timing', 'Drawback : Bulky and Inaccurate'] },
+          { p: 'PHASE 3', name: 'v2.0 · Improved Protoype', items: ['New sports: PaddleBall,PickleBall', 'Coach dashboard with progress', 'Cricket: full ball-relative timing'] },
+          { p: 'PHASE 4', name: 'v3.0 · Final product', items: ['Khelo India Partnership','Finished and Polished Product'] },
         ];
         return (
           <section id="roadmap" className="section" ref={ref}>
@@ -2889,6 +2912,7 @@
             <ThreeSports />
             <MVP />
             <HowItWorks />
+            <ForEveryone />
             <TuningTable />
             <Plan />
             <Stats />
