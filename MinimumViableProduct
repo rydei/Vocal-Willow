@@ -1,0 +1,65 @@
+Samsung Solve for Tomorrow 2026 — Sports Category
+This document establishes the exact, bulletproof technical foundation for the Vocal Willow MVP prototype.
+One critical reframe dictates your engineering decisions for the Samsung India jury: The bat already knows what happened — you just have to read it and speak it honestly. When a bat strikes a ball, a violent acoustic "tock" registers on the microphone alongside a distinct rotational profile in the gyroscope. A swing through empty air will have the motion but completely lacks the impact sound. By combining motion detection with directional acoustics, hit vs. miss classification becomes highly accurate using affordable hardware.
+The MVP Scope (Blind Cricket Focus)
+The primary goal of the Vocal Willow MVP is to enable a blind cricketer to step into a net and practice completely independently, with zero sighted assistance.
+Concretely, the v1 MVP is:
+The Handle Node: A lightweight, 3D-printed enclosure mounted securely to the top of a cricket bat handle containing the full sensor loop.
+The Audio App: A local mobile application that communicates with the bat via Web Bluetooth. The instant contact or a miss is registered, it triggers a pre-recorded audio file ("Missed," "Clean Hit").
+The Local Log: A visual and auditory session tracker that records balls faced, hits, misses, and hit percentage, culminating in a localized spoken summary: "You hit 14 of 20 balls. That's 70 percent."
+
+
+What to Deliberately NOT Build in v1:
+To prevent overclaiming, scope creep, or fatal jury traps during engineering reviews, the following features are strictly excluded from the initial prototype:
+Multi-Sport Integration (Paddleball/Pickleball): While the broader vision accommodates court sports, v1 is locked exclusively to Blind Cricket to ensure bulletproof accuracy before scaling.
+Live Text-to-Speech (TTS): Native TTS engines inject lag. The MVP relies solely on static, pre-recorded audio clips to achieve an instantaneous response under 200 ms.
+Complex Machine Learning (ML): Do not use ML on raw sensor traces. Simple, explainable threshold logic handles detection. It is vastly faster to debug and easy to justify mathematically to a technical juror.
+External Ball Tracking: The device does not estimate ball distance or speed, as a standalone bat sensor cannot measure spatial properties of an un-tracked ball.
+Hardware Architecture & Bill of Materials (BOM)
+The hardware stack utilizes highly standard, accessible components sourced locally in India (e.g., SP Road, Lamington Road, Robu.in) to keep production costs near ~₹1,500.
+Component Breakdown
+Microcontroller: ESP32 DevKit Board. Acts as the core processor, managing sensor sampling and driving the Bluetooth Low Energy (BLE) link.
+Motion Tracking: MPU6050 Accelerometer/Gyroscope Module. Used primarily to detect the high-velocity angular rotational peak of a physical swing.
+Acoustic Tracking: MAX9814 Electret Microphone Module. Provides automated gain control to isolate the high-frequency impact "tock" of the ball meeting willow.
+Power Subsystem: A standard 3.7V Lithium-Polymer (LiPo) battery managed by a TP4056 charging module. A compact DC-DC step-up boost module steps the voltage up to a stable 5V rail required by the ESP32 and sensor components.
+Enclosure: A robust, lightweight 3D-printed case designed for structural stability. It features a split-clamp architecture that fastens tightly over the top of the handle, ensuring the electronics do not slide or absorb destructive axial shock directly.
+Dual-Threshold Detection Algorithm
+The ESP32 runs a rule-based state machine that completely bypasses heavy processing by gating acoustic signals behind motion profiles.
+ [IDLE STATE]
+        |
+        v
+  Gyroscope Magnitude > 380 °/s?  ==================> Yes. Swing has begun.
+        |                                             Open Shot Window.
+        v
+  [SHOT WINDOW]
+        |
+        v
+  Wait for Rotational Velocity to Settle (~12 ms) ===> Protects against early swing noise.
+        |
+        v
+  [IMPACT WINDOW] (Open for 280 ms)
+        |
+        v
+  Did MAX9814 Acoustic Output Spike? 
+        |
+        +---> YES (Amplitude > Threshold) ===========> Emit "HIT" Event via BLE
+        |
+        +---> NO (Window Expires) ===================> Emit "MISS" Event via BLE
+        |
+        v
+  [COOLDOWN LOCKOUT] (650 ms) =======================> Rejects ground-tapping & echo.
+
+Optimization Notes
+Gated Audio Capture: The app or ESP32 does not monitor ambient room volume. The microphone channel is asleep until the gyroscope registers a physical swing exceeding 380 deg/s. This eliminates false positives caused by cheering, shouting, or nearby players.
+Cooldown Interlock: A 650 ms structural lockout follows every shot event. This filters out secondary echo signatures and prevents a player from double-triggering the system when they tap their bat against the ground post-swing.
+App Integration & BLE Payload Layout
+The ESP32 acts as a BLE server broadcasting over Web Bluetooth directly to an offline, audio-first frontend interface.
+BLE Characteristics
+Event Characteristic (SVC 8b9e0001): A strict notify-only channel. The payload uses a compressed JSON string designed for minimal transit overhead:
+
+{"swing": 1, "hit": 1, "a": 5.2, "g": 420, "id": 3} 
+
+* `hit`: Binary flag ($1$ = Hit, $0$ = Miss)[cite: 3]. * `a`: Dynamic G-force or acoustic amplitude registering contact quality[cite: 3]. * `g`: Peak gyroscope rotational velocity achieved during swing execution[cite: 3]. ### The Accessibility Loop The mobile app operates entirely offline and requires no login sequences or server handshakes[cite: 1]. Upon receiving a BLE notification, the phone instantly pulls the matched pre-recorded audio snippet from local storage and plays it[cite: 1, 3]. The user interface must be verified visually and audibly with native Android TalkBack active, ensuring large touch boundaries, high contrast, and spoken confirmation indicators for all battery and connection profiles[cite: 1]. 
+
+
+
